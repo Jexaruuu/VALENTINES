@@ -5,7 +5,9 @@ import { ThemeContext } from "../App";
 export default function Navigation() {
     const [scrolled, setScrolled] = useState(false);
     const { theme, toggleTheme } = useContext(ThemeContext);
+
     const [overlayOpen, setOverlayOpen] = useState(() => localStorage.getItem("jex_overlay_open") === "1");
+    const [galleryOpen, setGalleryOpen] = useState(() => localStorage.getItem("jex_gallery_open") === "1");
 
     const [choice, setChoice] = useState(() => localStorage.getItem("jex_can_i_choice") || "none");
     const [noStep, setNoStep] = useState(() => Number(localStorage.getItem("jex_can_i_no_step") || "0"));
@@ -37,7 +39,26 @@ export default function Navigation() {
     }, []);
 
     useEffect(() => {
-        if (!overlayOpen) return;
+        const sync = () => setGalleryOpen(localStorage.getItem("jex_gallery_open") === "1");
+        const onOpen = () => setGalleryOpen(true);
+        const onClose = () => setGalleryOpen(false);
+        const onStorage = (e) => {
+            if (e.key === "jex_gallery_open") sync();
+        };
+
+        window.addEventListener("jex_gallery_open", onOpen);
+        window.addEventListener("jex_gallery_close", onClose);
+        window.addEventListener("storage", onStorage);
+
+        return () => {
+            window.removeEventListener("jex_gallery_open", onOpen);
+            window.removeEventListener("jex_gallery_close", onClose);
+            window.removeEventListener("storage", onStorage);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!overlayOpen && !galleryOpen) return;
         const prevHtml = document.documentElement.style.overflow;
         const prevBody = document.body.style.overflow;
         document.documentElement.style.overflow = "hidden";
@@ -46,7 +67,7 @@ export default function Navigation() {
             document.documentElement.style.overflow = prevHtml;
             document.body.style.overflow = prevBody;
         };
-    }, [overlayOpen]);
+    }, [overlayOpen, galleryOpen]);
 
     useEffect(() => {
         localStorage.setItem("jex_can_i_choice", choice);
@@ -64,6 +85,16 @@ export default function Navigation() {
     const closeOverlay = () => {
         localStorage.setItem("jex_overlay_open", "0");
         window.dispatchEvent(new Event("jex_overlay_close"));
+    };
+
+    const openGalleryOverlay = () => {
+        localStorage.setItem("jex_gallery_open", "1");
+        window.dispatchEvent(new Event("jex_gallery_open"));
+    };
+
+    const closeGalleryOverlay = () => {
+        localStorage.setItem("jex_gallery_open", "0");
+        window.dispatchEvent(new Event("jex_gallery_close"));
     };
 
     const resetCanI = () => {
@@ -140,6 +171,18 @@ export default function Navigation() {
         setNoStep((s) => Math.min(s + 1, 5));
     };
 
+    const GALLERY_PHOTOS = useMemo(
+        () => [
+            { src: "/us1.png", alt: "Us 1", rot: "-rotate-2", tape: "left-6 -top-3 rotate-[-10deg]" },
+            { src: "/us2.png", alt: "Us 2", rot: "rotate-1", tape: "right-8 -top-3 rotate-[12deg]" },
+            { src: "/us3.png", alt: "Us 3", rot: "-rotate-1", tape: "left-10 -top-3 rotate-[8deg]" },
+            { src: "/us4.png", alt: "Us 4", rot: "rotate-2", tape: "right-10 -top-3 rotate-[-8deg]" },
+            { src: "/us5.png", alt: "Us 5", rot: "-rotate-2", tape: "left-7 -top-3 rotate-[14deg]" },
+            { src: "/us6.png", alt: "Us 6", rot: "rotate-1", tape: "right-6 -top-3 rotate-[-12deg]" },
+        ],
+        []
+    );
+
     if (overlayOpen) {
         const isDefault = choice === "none";
         const isNo = choice === "no";
@@ -166,7 +209,9 @@ export default function Navigation() {
                                 Will You Be My Valentine?
                             </p>
 
-                            <p className="mt-2 text-[12px] sm:text-sm font-medium text-white/80">Just one click… and you’ll make my day.</p>
+                            <p className="mt-2 text-[12px] sm:text-sm font-medium text-white/80">
+                                Just one click… and you’ll make my day.
+                            </p>
                         </div>
 
                         <div
@@ -287,6 +332,122 @@ export default function Navigation() {
         );
     }
 
+    if (galleryOpen) {
+        return (
+            <div
+                className="fixed inset-0 z-[999] font-['Poppins']"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Gallery overlay"
+                onClick={closeGalleryOverlay}
+            >
+                <div className="absolute inset-0 bg-black/30 backdrop-blur-md" aria-hidden="true" />
+
+                <div className="relative z-10 min-h-[100svh] w-full px-4 py-6 sm:py-10 flex items-center justify-center">
+                    <div className="w-full max-w-6xl" onClick={(e) => e.stopPropagation()}>
+                        <div className="mx-auto max-w-2xl text-center">
+                          
+
+                            <p className="mt-4 text-[22px] sm:text-[34px] leading-tight font-black tracking-tight text-white drop-shadow-[0_10px_24px_rgba(0,0,0,0.35)]">
+                             Memories Gallery
+                            </p>
+
+                            <p className="mt-2 text-[12px] sm:text-sm font-medium text-white/80">
+                                Still cherishing the memories we&apos;ve made together.
+                            </p>
+                        </div>
+
+                        <div className="mt-6 sm:mt-8">
+                            <div className="relative mx-auto w-full max-w-6xl">
+                                <div className="pointer-events-none absolute inset-0 -z-10 opacity-[0.55]">
+                                    <div className="absolute -top-10 left-1/2 h-64 w-[46rem] -translate-x-1/2 rounded-full bg-white/18 blur-3xl" />
+                                    <div className="absolute -bottom-10 right-0 h-64 w-[40rem] rounded-full bg-white/14 blur-3xl" />
+                                </div>
+
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5">
+                                    {GALLERY_PHOTOS.map((p, i) => (
+                                        <div
+                                            key={`${p.src}-${i}`}
+                                            className={[
+                                                "relative",
+                                                "rounded-[26px]",
+                                                "border border-white/18",
+                                                "bg-white/10",
+                                                "backdrop-blur-md",
+                                                "shadow-[0_22px_60px_-45px_rgba(0,0,0,0.85)]",
+                                                "p-2 sm:p-3",
+                                                "transition-transform duration-200 ease-out",
+                                                "hover:-translate-y-0.5",
+                                                p.rot,
+                                            ].join(" ")}
+                                        >
+                                            <div
+                                                className={[
+                                                    "pointer-events-none absolute",
+                                                    "h-7 w-20 sm:h-8 sm:w-24",
+                                                    "rounded-full",
+                                                    "bg-white/22",
+                                                    "ring-1 ring-white/28",
+                                                    "backdrop-blur",
+                                                    "shadow-[0_10px_30px_-20px_rgba(0,0,0,0.9)]",
+                                                    p.tape,
+                                                ].join(" ")}
+                                            />
+
+                                            <div className="relative overflow-hidden rounded-[22px] bg-white/70">
+                                                <div className="pointer-events-none absolute inset-0 opacity-[0.28]">
+                                                    <div className="absolute -left-10 -top-10 h-40 w-40 rounded-full bg-rose-200/60 blur-2xl" />
+                                                    <div className="absolute -right-10 -bottom-10 h-40 w-40 rounded-full bg-pink-200/60 blur-2xl" />
+                                                </div>
+
+                                                <div className="relative p-2 sm:p-2.5">
+                                                    <div className="relative overflow-hidden rounded-[18px]">
+                                                        <img
+                                                            src={p.src}
+                                                            alt={p.alt}
+                                                            className="h-44 sm:h-56 md:h-60 w-full object-cover select-none"
+                                                            draggable="false"
+                                                        />
+                                                    </div>
+
+                                                    <div className="mt-2 flex items-center justify-between">
+                                                        <div className="min-w-0">
+                                                            <p className="truncate text-[11px] sm:text-xs font-extrabold tracking-tight text-slate-900">
+                                                                Better days with you
+                                                            </p>
+                                                            <p className="truncate text-[10px] sm:text-[11px] text-slate-500">
+                                                                just having fun together
+                                                            </p>
+                                                        </div>
+
+                                                        <span className="shrink-0 grid h-8 w-8 place-items-center rounded-2xl bg-white/75 ring-1 ring-rose-200/60 text-[13px]">
+                                                            💞
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="pointer-events-none absolute -bottom-2 left-0 right-0 h-10 opacity-[0.45]">
+                                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_0%,rgba(255,255,255,0.85),transparent_55%),radial-gradient(circle_at_45%_0%,rgba(255,255,255,0.85),transparent_55%),radial-gradient(circle_at_75%_0%,rgba(255,255,255,0.85),transparent_55%)]" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
+                           
+
+                        </div>
+
+                      
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <header className="sticky top-0 z-50 font-['Poppins']">
             <div className="absolute inset-0 -z-10 bg-[var(--bg-via)]" />
@@ -334,6 +495,28 @@ export default function Navigation() {
                                                 key={item.label}
                                                 type="button"
                                                 onClick={openOverlay}
+                                                className={[
+                                                    "group/link relative isolate rounded-3xl px-4 py-2 text-sm font-semibold",
+                                                    "text-slate-700",
+                                                    "transition-all duration-200 ease-out",
+                                                    "hover:text-[var(--accent-text)]",
+                                                    "hover:-translate-y-0.5 active:translate-y-0",
+                                                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-white/70",
+                                                ].join(" ")}
+                                            >
+                                                <span className="relative z-10">{item.label}</span>
+                                                <span className="pointer-events-none absolute inset-0 -z-10 rounded-3xl bg-white/85 opacity-0 shadow-[0_14px_28px_-24px_var(--shadow)] transition-opacity duration-200 ease-out group-hover/link:opacity-100" />
+                                                <span className="pointer-events-none absolute inset-x-4 bottom-1.5 h-0.5 origin-left scale-x-0 rounded-full bg-[var(--accent-solid)] transition-transform duration-200 ease-out group-hover/link:scale-x-100" />
+                                            </button>
+                                        );
+                                    }
+
+                                    if (item.label === "Gallery") {
+                                        return (
+                                            <button
+                                                key={item.label}
+                                                type="button"
+                                                onClick={openGalleryOverlay}
                                                 className={[
                                                     "group/link relative isolate rounded-3xl px-4 py-2 text-sm font-semibold",
                                                     "text-slate-700",
@@ -449,8 +632,9 @@ export default function Navigation() {
                                     <span className="truncate">Will You?</span>
                                 </button>
 
-                                <a
-                                    href="#gallery"
+                                <button
+                                    type="button"
+                                    onClick={openGalleryOverlay}
                                     className={[
                                         "group/mob inline-flex items-center justify-center gap-1.5",
                                         "rounded-3xl px-3 py-2 text-[11px] font-semibold text-[var(--accent-text)]",
@@ -463,7 +647,7 @@ export default function Navigation() {
                                 >
                                     <span className="transition-transform duration-200 ease-out group-hover/mob:scale-[1.07]">✨</span>
                                     <span className="truncate">Gallery</span>
-                                </a>
+                                </button>
 
                                 <a
                                     href="#message"
