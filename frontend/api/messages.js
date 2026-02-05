@@ -1,6 +1,6 @@
 // api/messages.js
-import { kv } from "@vercel/kv";
 import crypto from "node:crypto";
+import { kv } from "@vercel/kv";
 
 const KEY = "jex_wall_messages";
 const LIMIT = 120;
@@ -47,7 +47,8 @@ export default async function handler(req, res) {
         }
 
         res.status(405).json({ error: "Method not allowed" });
-    } catch {
+    } catch (e) {
+        console.error("API /messages error:", e);
         res.status(500).json({ error: "Server error" });
     }
 }
