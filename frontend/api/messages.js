@@ -13,6 +13,7 @@ const isAdmin = (req) => {
 };
 
 const ownerHashFromToken = (token) => {
+    
   const t = String(token || "").trim();
   if (!t) return "";
   const pepper = process.env.WALL_OWNER_PEPPER || process.env.WALL_ADMIN_KEY || "";

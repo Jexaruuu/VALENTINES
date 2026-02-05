@@ -20,7 +20,6 @@ export default function Navigation() {
     const [wallPosting, setWallPosting] = useState(false);
     const [wallError, setWallError] = useState("");
 
-    const [adminKey, setAdminKey] = useState(() => localStorage.getItem("jex_wall_admin_key") || "");
     const [wallDeletingId, setWallDeletingId] = useState(null);
 
     const [ownerToken, setOwnerToken] = useState(() => localStorage.getItem("jex_wall_owner_token") || "");
@@ -117,14 +116,11 @@ export default function Navigation() {
     }, [wallName]);
 
     useEffect(() => {
-        localStorage.setItem("jex_wall_admin_key", adminKey);
-    }, [adminKey]);
-
-    useEffect(() => {
         if (ownerToken) return;
-        const t = (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function"
-            ? globalThis.crypto.randomUUID()
-            : `${Date.now()}-${Math.random().toString(16).slice(2)}`) + "-jex";
+        const t =
+            (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function"
+                ? globalThis.crypto.randomUUID()
+                : `${Date.now()}-${Math.random().toString(16).slice(2)}`) + "-jex";
         localStorage.setItem("jex_wall_owner_token", t);
         setOwnerToken(t);
     }, [ownerToken]);
@@ -333,18 +329,13 @@ export default function Navigation() {
         }
     };
 
-    const deleteWall = async (id, mode) => {
+    const deleteWall = async (id) => {
         setWallDeletingId(id);
         setWallError("");
         try {
             const headers = {};
-            if (mode === "admin") {
-                if (!adminKey) throw new Error("No admin key");
-                headers["x-admin-key"] = adminKey;
-            } else {
-                if (!ownerToken) throw new Error("No owner token");
-                headers["x-owner-token"] = ownerToken;
-            }
+            if (!ownerToken) throw new Error("No owner token");
+            headers["x-owner-token"] = ownerToken;
 
             const res = await fetch(`/api/messages?id=${encodeURIComponent(id)}`, {
                 method: "DELETE",
@@ -354,7 +345,7 @@ export default function Navigation() {
             if (!res.ok) throw new Error("Failed to delete.");
             await fetchWall({ silent: true });
         } catch (e) {
-            setWallError(mode === "admin" ? "Could not delete the message. Check your admin key." : "Could not delete this message.");
+            setWallError("Could not delete this message.");
         } finally {
             setWallDeletingId(null);
         }
@@ -366,6 +357,26 @@ export default function Navigation() {
             postWall();
         }
     };
+
+    const formatTime = (ts) => {
+        if (!ts) return "";
+        try {
+            return new Date(ts).toLocaleString();
+        } catch {
+            return "";
+        }
+    };
+
+    const wallStats = useMemo(() => {
+        const total = wallMessages.length;
+        let mine = 0;
+        if (ownerHash) {
+            for (const m of wallMessages) {
+                if (m?.owner && m.owner === ownerHash) mine += 1;
+            }
+        }
+        return { total, mine };
+    }, [wallMessages, ownerHash]);
 
     if (overlayOpen) {
         const isDefault = choice === "none";
@@ -653,15 +664,15 @@ export default function Navigation() {
             >
                 <div className="absolute inset-0 bg-black/30 backdrop-blur-md" aria-hidden="true" />
 
-                <div className="relative z-10 min-h-[100svh] w-full px-4 py-6 sm:py-10 flex items-center justify-center">
-                    <div className="w-full max-w-5xl" onClick={(e) => e.stopPropagation()}>
-                        <div className="mx-auto max-w-2xl text-center">
+                <div className="relative z-10 min-h-[100svh] w-full px-3 sm:px-4 py-6 sm:py-10 flex items-center justify-center">
+                    <div className="w-full max-w-6xl" onClick={(e) => e.stopPropagation()}>
+                        <div className="mx-auto max-w-3xl text-center">
                             <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/18 bg-white/10 px-4 py-2 text-[11px] font-semibold tracking-wide text-white/85">
                                 <span className="grid h-5 w-5 place-items-center rounded-full bg-white/15">🧸</span>
                                 Freedom Wall
                             </div>
 
-                            <p className="mt-4 text-[22px] sm:text-[34px] leading-tight font-black tracking-tight text-white drop-shadow-[0_10px_24px_rgba(0,0,0,0.35)]">
+                            <p className="mt-4 text-[22px] sm:text-[36px] leading-tight font-black tracking-tight text-white drop-shadow-[0_10px_24px_rgba(0,0,0,0.35)]">
                                 Leave a message for each other
                             </p>
 
@@ -670,50 +681,65 @@ export default function Navigation() {
                             </p>
                         </div>
 
-                        <div className="mt-6 sm:mt-8 grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,360px)] items-start">
-                            <div
-                                className={[
-                                    "rounded-3xl border border-white/18 bg-white/12 backdrop-blur-md",
-                                    "shadow-[0_22px_60px_-45px_rgba(0,0,0,0.85)]",
-                                    "overflow-hidden",
-                                ].join(" ")}
-                            >
-                                <div className="flex items-center justify-between gap-2 px-4 sm:px-5 py-3 border-b border-white/12">
-                                    <div className="min-w-0">
-                                        <p className="text-white font-extrabold tracking-tight">Wall Posts</p>
-                                        <p className="text-white/70 text-[11px] sm:text-xs">Auto-refresh every 5 seconds</p>
+                        <div className="mt-6 sm:mt-9 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)] items-start">
+                            <div className="rounded-3xl border border-white/18 bg-white/12 backdrop-blur-md shadow-[0_22px_60px_-45px_rgba(0,0,0,0.85)] overflow-hidden">
+                                <div className="px-4 sm:px-5 py-3 border-b border-white/12">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0">
+                                            <p className="text-white font-extrabold tracking-tight">Wall Posts</p>
+                                            <p className="mt-0.5 text-white/70 text-[11px] sm:text-xs">
+                                                Auto-refresh every 5 seconds
+                                            </p>
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => fetchWall()}
+                                                className={[
+                                                    "rounded-2xl px-3 py-2",
+                                                    "text-[11px] font-semibold text-white/85",
+                                                    "bg-white/10 ring-1 ring-white/20",
+                                                    "hover:bg-white/14",
+                                                    "transition-all duration-200 ease-out",
+                                                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+                                                ].join(" ")}
+                                            >
+                                                Refresh
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={closeMessageOverlay}
+                                                className={[
+                                                    "rounded-2xl px-3 py-2",
+                                                    "text-[11px] font-semibold text-white/85",
+                                                    "bg-white/10 ring-1 ring-white/20",
+                                                    "hover:bg-white/14",
+                                                    "transition-all duration-200 ease-out",
+                                                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+                                                ].join(" ")}
+                                            >
+                                                Close
+                                            </button>
+                                        </div>
                                     </div>
 
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => fetchWall()}
-                                            className={[
-                                                "rounded-2xl px-3 py-2",
-                                                "text-[11px] font-semibold text-white/85",
-                                                "bg-white/10 ring-1 ring-white/20",
-                                                "hover:bg-white/14",
-                                                "transition-all duration-200 ease-out",
-                                                "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
-                                            ].join(" ")}
-                                        >
-                                            Refresh
-                                        </button>
+                                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                                        <span className="inline-flex items-center gap-2 rounded-full bg-white/10 ring-1 ring-white/18 px-3 py-1.5 text-[11px] font-semibold text-white/85">
+                                            <span className="grid h-5 w-5 place-items-center rounded-full bg-white/12">🧾</span>
+                                            {wallStats.total} total
+                                        </span>
 
-                                        <button
-                                            type="button"
-                                            onClick={closeMessageOverlay}
-                                            className={[
-                                                "rounded-2xl px-3 py-2",
-                                                "text-[11px] font-semibold text-white/85",
-                                                "bg-white/10 ring-1 ring-white/20",
-                                                "hover:bg-white/14",
-                                                "transition-all duration-200 ease-out",
-                                                "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
-                                            ].join(" ")}
-                                        >
-                                            Close
-                                        </button>
+                                        <span className="inline-flex items-center gap-2 rounded-full bg-white/10 ring-1 ring-white/18 px-3 py-1.5 text-[11px] font-semibold text-white/85">
+                                            <span className="grid h-5 w-5 place-items-center rounded-full bg-white/12">🫶</span>
+                                            {wallStats.mine} mine
+                                        </span>
+
+                                        <span className="inline-flex items-center gap-2 rounded-full bg-white/10 ring-1 ring-white/18 px-3 py-1.5 text-[11px] font-semibold text-white/75">
+                                            <span className="grid h-5 w-5 place-items-center rounded-full bg-white/12">⌘</span>
+                                            Ctrl/⌘ + Enter to send
+                                        </span>
                                     </div>
                                 </div>
 
@@ -731,11 +757,10 @@ export default function Navigation() {
                                             No messages yet. Be the first 🫶
                                         </div>
                                     ) : (
-                                        <div className="max-h-[58svh] overflow-auto pr-1">
+                                        <div className="max-h-[60svh] overflow-auto pr-1">
                                             <div className="grid gap-2.5">
                                                 {wallMessages.map((m) => {
                                                     const canDeleteOwn = !!ownerHash && !!m?.owner && m.owner === ownerHash;
-                                                    const canDelete = !!adminKey || canDeleteOwn;
 
                                                     return (
                                                         <div
@@ -748,19 +773,28 @@ export default function Navigation() {
                                                         >
                                                             <div className="flex items-start justify-between gap-3">
                                                                 <div className="min-w-0">
-                                                                    <p className="text-white font-extrabold text-sm tracking-tight truncate">
-                                                                        {m.name ? m.name : "Anonymous"}
-                                                                    </p>
+                                                                    <div className="flex flex-wrap items-center gap-2">
+                                                                        <p className="text-white font-extrabold text-sm tracking-tight truncate">
+                                                                            {m.name ? m.name : "Anonymous"}
+                                                                        </p>
+                                                                        {canDeleteOwn ? (
+                                                                            <span className="inline-flex items-center gap-1 rounded-full bg-white/10 ring-1 ring-white/18 px-2 py-0.5 text-[10px] font-extrabold text-white/80">
+                                                                                <span className="grid h-4 w-4 place-items-center rounded-full bg-white/12">👤</span>
+                                                                                Yours
+                                                                            </span>
+                                                                        ) : null}
+                                                                    </div>
+
                                                                     <p className="mt-2 text-white/90 text-sm leading-relaxed whitespace-pre-wrap break-words">
                                                                         {m.text}
                                                                     </p>
                                                                 </div>
 
                                                                 <div className="shrink-0 flex items-center gap-2">
-                                                                    {canDelete ? (
+                                                                    {canDeleteOwn ? (
                                                                         <button
                                                                             type="button"
-                                                                            onClick={() => deleteWall(m.id, adminKey ? "admin" : "owner")}
+                                                                            onClick={() => deleteWall(m.id)}
                                                                             disabled={wallDeletingId === m.id}
                                                                             className={[
                                                                                 "rounded-2xl px-3 py-2",
@@ -783,7 +817,7 @@ export default function Navigation() {
                                                             </div>
 
                                                             <p className="mt-3 text-white/60 text-[10px] sm:text-[11px] font-semibold">
-                                                                {m.ts ? new Date(m.ts).toLocaleString() : ""}
+                                                                {formatTime(m.ts)}
                                                             </p>
                                                         </div>
                                                     );
@@ -794,95 +828,78 @@ export default function Navigation() {
                                 </div>
                             </div>
 
-                            <div
-                                className={[
-                                    "rounded-3xl border border-white/18 bg-white/12 backdrop-blur-md",
-                                    "shadow-[0_22px_60px_-45px_rgba(0,0,0,0.85)]",
-                                    "p-4 sm:p-5",
-                                ].join(" ")}
-                            >
-                                <p className="text-white font-extrabold tracking-tight">Write a post</p>
-                                <p className="mt-1 text-white/70 text-[11px] sm:text-xs font-semibold">
-                                    Tip: Ctrl/⌘ + Enter to send
-                                </p>
-
-                                <label className="mt-4 block">
-                                    <span className="block text-white/80 text-xs font-semibold">Name (optional)</span>
-                                    <input
-                                        value={wallName}
-                                        onChange={(e) => setWallName(e.target.value)}
-                                        placeholder="e.g. Adoy"
-                                        className={[
-                                            "mt-2 w-full",
-                                            "rounded-2xl px-4 py-2.5",
-                                            "bg-white/10 text-white placeholder:text-white/45",
-                                            "ring-1 ring-white/18",
-                                            "focus:outline-none focus:ring-2 focus:ring-white/70",
-                                            "text-sm font-semibold",
-                                        ].join(" ")}
-                                    />
-                                </label>
-
-                                <label className="mt-4 block">
-                                    <span className="block text-white/80 text-xs font-semibold">Message</span>
-                                    <textarea
-                                        value={wallText}
-                                        onChange={(e) => setWallText(e.target.value)}
-                                        onKeyDown={onWallKeyDown}
-                                        placeholder="Write something…"
-                                        rows={5}
-                                        className={[
-                                            "mt-2 w-full resize-none",
-                                            "rounded-2xl px-4 py-3",
-                                            "bg-white/10 text-white placeholder:text-white/45",
-                                            "ring-1 ring-white/18",
-                                            "focus:outline-none focus:ring-2 focus:ring-white/70",
-                                            "text-sm font-semibold leading-relaxed",
-                                        ].join(" ")}
-                                    />
-                                </label>
-
-                                <label className="mt-4 block">
-                                    <span className="block text-white/80 text-xs font-semibold">Admin key (only for you)</span>
-                                    <input
-                                        value={adminKey}
-                                        onChange={(e) => setAdminKey(e.target.value)}
-                                        placeholder="Paste your admin key"
-                                        className={[
-                                            "mt-2 w-full",
-                                            "rounded-2xl px-4 py-2.5",
-                                            "bg-white/10 text-white placeholder:text-white/45",
-                                            "ring-1 ring-white/18",
-                                            "focus:outline-none focus:ring-2 focus:ring-white/70",
-                                            "text-sm font-semibold",
-                                        ].join(" ")}
-                                    />
-                                </label>
-
-                                <button
-                                    type="button"
-                                    onClick={postWall}
-                                    disabled={wallPosting || !(wallText || "").trim()}
-                                    className={[
-                                        "mt-4 w-full inline-flex items-center justify-center gap-2",
-                                        "rounded-3xl px-5 py-3",
-                                        "text-sm font-extrabold",
-                                        "text-slate-900 bg-white",
-                                        "shadow-[0_22px_55px_-40px_rgba(0,0,0,0.8)]",
-                                        "transition-all duration-200 ease-out",
-                                        "hover:-translate-y-0.5 active:translate-y-0",
-                                        "disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0",
-                                        "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
-                                    ].join(" ")}
-                                >
-                                    <span className="grid h-5 w-5 place-items-center rounded-full bg-black/5">📨</span>
-                                    {wallPosting ? "Posting…" : "Post Message"}
-                                </button>
-
-                                <div className="mt-3 rounded-2xl bg-white/8 ring-1 ring-white/14 p-3">
-                                    <p className="text-white/80 text-[11px] font-semibold leading-relaxed">
-                                        This is shared for everyone who visits your site. Keep it nice 🫶
+                            <div className="rounded-3xl border border-white/18 bg-white/12 backdrop-blur-md shadow-[0_22px_60px_-45px_rgba(0,0,0,0.85)] overflow-hidden">
+                                <div className="px-4 sm:px-5 py-3 border-b border-white/12">
+                                    <p className="text-white font-extrabold tracking-tight">Write a post</p>
+                                    <p className="mt-0.5 text-white/70 text-[11px] sm:text-xs font-semibold">
+                                        Be kind. Everyone can read it.
                                     </p>
+                                </div>
+
+                                <div className="p-4 sm:p-5">
+                                    <label className="block">
+                                        <span className="block text-white/80 text-xs font-semibold">Name (optional)</span>
+                                        <input
+                                            value={wallName}
+                                            onChange={(e) => setWallName(e.target.value)}
+                                            placeholder="e.g. Adoy"
+                                            className={[
+                                                "mt-2 w-full",
+                                                "rounded-2xl px-4 py-2.5",
+                                                "bg-white/10 text-white placeholder:text-white/45",
+                                                "ring-1 ring-white/18",
+                                                "focus:outline-none focus:ring-2 focus:ring-white/70",
+                                                "text-sm font-semibold",
+                                            ].join(" ")}
+                                        />
+                                    </label>
+
+                                    <label className="mt-4 block">
+                                        <span className="block text-white/80 text-xs font-semibold">Message</span>
+                                        <textarea
+                                            value={wallText}
+                                            onChange={(e) => setWallText(e.target.value)}
+                                            onKeyDown={onWallKeyDown}
+                                            placeholder="Write something…"
+                                            rows={6}
+                                            className={[
+                                                "mt-2 w-full resize-none",
+                                                "rounded-2xl px-4 py-3",
+                                                "bg-white/10 text-white placeholder:text-white/45",
+                                                "ring-1 ring-white/18",
+                                                "focus:outline-none focus:ring-2 focus:ring-white/70",
+                                                "text-sm font-semibold leading-relaxed",
+                                            ].join(" ")}
+                                        />
+                                    </label>
+
+                                    <div className="mt-4 grid gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={postWall}
+                                            disabled={wallPosting || !(wallText || "").trim()}
+                                            className={[
+                                                "w-full inline-flex items-center justify-center gap-2",
+                                                "rounded-3xl px-5 py-3",
+                                                "text-sm font-extrabold",
+                                                "text-slate-900 bg-white",
+                                                "shadow-[0_22px_55px_-40px_rgba(0,0,0,0.8)]",
+                                                "transition-all duration-200 ease-out",
+                                                "hover:-translate-y-0.5 active:translate-y-0",
+                                                "disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0",
+                                                "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+                                            ].join(" ")}
+                                        >
+                                            <span className="grid h-5 w-5 place-items-center rounded-full bg-black/5">📨</span>
+                                            {wallPosting ? "Posting…" : "Post Message"}
+                                        </button>
+
+                                        <div className="rounded-2xl bg-white/8 ring-1 ring-white/14 p-3">
+                                            <p className="text-white/80 text-[11px] font-semibold leading-relaxed">
+                                                Tip: Your posts can be deleted only by you (from this device/browser).
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
