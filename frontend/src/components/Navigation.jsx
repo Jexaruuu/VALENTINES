@@ -23,6 +23,9 @@ export default function Navigation() {
     const [adminKey, setAdminKey] = useState(() => localStorage.getItem("jex_wall_admin_key") || "");
     const [wallDeletingId, setWallDeletingId] = useState(null);
 
+    const [ownerToken, setOwnerToken] = useState(() => localStorage.getItem("jex_wall_owner_token") || "");
+    const [ownerHash, setOwnerHash] = useState("");
+
     const pollRef = useRef(null);
 
     useEffect(() => {
@@ -116,6 +119,44 @@ export default function Navigation() {
     useEffect(() => {
         localStorage.setItem("jex_wall_admin_key", adminKey);
     }, [adminKey]);
+
+    useEffect(() => {
+        if (ownerToken) return;
+        const t = (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function"
+            ? globalThis.crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(16).slice(2)}`) + "-jex";
+        localStorage.setItem("jex_wall_owner_token", t);
+        setOwnerToken(t);
+    }, [ownerToken]);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const toHex = (buf) =>
+            Array.from(new Uint8Array(buf))
+                .map((b) => b.toString(16).padStart(2, "0"))
+                .join("");
+
+        const compute = async () => {
+            if (!ownerToken) {
+                if (!cancelled) setOwnerHash("");
+                return;
+            }
+            try {
+                const pepper = "";
+                const data = new TextEncoder().encode(`${pepper}:${ownerToken}`);
+                const digest = await crypto.subtle.digest("SHA-256", data);
+                if (!cancelled) setOwnerHash(toHex(digest));
+            } catch {
+                if (!cancelled) setOwnerHash("");
+            }
+        };
+
+        compute();
+        return () => {
+            cancelled = true;
+        };
+    }, [ownerToken]);
 
     const openOverlay = () => {
         localStorage.setItem("jex_overlay_open", "1");
@@ -280,7 +321,7 @@ export default function Navigation() {
             const res = await fetch("/api/messages", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, text }),
+                body: JSON.stringify({ name, text, ownerToken }),
             });
             if (!res.ok) throw new Error("Failed to post.");
             setWallText("");
@@ -292,19 +333,28 @@ export default function Navigation() {
         }
     };
 
-    const deleteWall = async (id) => {
-        if (!adminKey) return;
+    const deleteWall = async (id, mode) => {
         setWallDeletingId(id);
         setWallError("");
         try {
+            const headers = {};
+            if (mode === "admin") {
+                if (!adminKey) throw new Error("No admin key");
+                headers["x-admin-key"] = adminKey;
+            } else {
+                if (!ownerToken) throw new Error("No owner token");
+                headers["x-owner-token"] = ownerToken;
+            }
+
             const res = await fetch(`/api/messages?id=${encodeURIComponent(id)}`, {
                 method: "DELETE",
-                headers: { "x-admin-key": adminKey },
+                headers,
             });
+
             if (!res.ok) throw new Error("Failed to delete.");
             await fetchWall({ silent: true });
         } catch (e) {
-            setWallError("Could not delete the message. Check your admin key.");
+            setWallError(mode === "admin" ? "Could not delete the message. Check your admin key." : "Could not delete this message.");
         } finally {
             setWallDeletingId(null);
         }
@@ -683,56 +733,61 @@ export default function Navigation() {
                                     ) : (
                                         <div className="max-h-[58svh] overflow-auto pr-1">
                                             <div className="grid gap-2.5">
-                                                {wallMessages.map((m) => (
-                                                    <div
-                                                        key={m.id}
-                                                        className={[
-                                                            "rounded-3xl bg-white/10 ring-1 ring-white/18",
-                                                            "p-4",
-                                                            "shadow-[0_18px_50px_-40px_rgba(0,0,0,0.85)]",
-                                                        ].join(" ")}
-                                                    >
-                                                        <div className="flex items-start justify-between gap-3">
-                                                            <div className="min-w-0">
-                                                                <p className="text-white font-extrabold text-sm tracking-tight truncate">
-                                                                    {m.name ? m.name : "Anonymous"}
-                                                                </p>
-                                                                <p className="mt-2 text-white/90 text-sm leading-relaxed whitespace-pre-wrap break-words">
-                                                                    {m.text}
-                                                                </p>
+                                                {wallMessages.map((m) => {
+                                                    const canDeleteOwn = !!ownerHash && !!m?.owner && m.owner === ownerHash;
+                                                    const canDelete = !!adminKey || canDeleteOwn;
+
+                                                    return (
+                                                        <div
+                                                            key={m.id}
+                                                            className={[
+                                                                "rounded-3xl bg-white/10 ring-1 ring-white/18",
+                                                                "p-4",
+                                                                "shadow-[0_18px_50px_-40px_rgba(0,0,0,0.85)]",
+                                                            ].join(" ")}
+                                                        >
+                                                            <div className="flex items-start justify-between gap-3">
+                                                                <div className="min-w-0">
+                                                                    <p className="text-white font-extrabold text-sm tracking-tight truncate">
+                                                                        {m.name ? m.name : "Anonymous"}
+                                                                    </p>
+                                                                    <p className="mt-2 text-white/90 text-sm leading-relaxed whitespace-pre-wrap break-words">
+                                                                        {m.text}
+                                                                    </p>
+                                                                </div>
+
+                                                                <div className="shrink-0 flex items-center gap-2">
+                                                                    {canDelete ? (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => deleteWall(m.id, adminKey ? "admin" : "owner")}
+                                                                            disabled={wallDeletingId === m.id}
+                                                                            className={[
+                                                                                "rounded-2xl px-3 py-2",
+                                                                                "text-[11px] font-semibold text-white/85",
+                                                                                "bg-white/10 ring-1 ring-white/20",
+                                                                                "hover:bg-white/14",
+                                                                                "transition-all duration-200 ease-out",
+                                                                                "disabled:opacity-60 disabled:cursor-not-allowed",
+                                                                                "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+                                                                            ].join(" ")}
+                                                                        >
+                                                                            {wallDeletingId === m.id ? "Deleting…" : "Delete"}
+                                                                        </button>
+                                                                    ) : null}
+
+                                                                    <span className="grid h-8 w-8 place-items-center rounded-2xl bg-white/12 ring-1 ring-white/18 text-[13px]">
+                                                                        💌
+                                                                    </span>
+                                                                </div>
                                                             </div>
 
-                                                            <div className="shrink-0 flex items-center gap-2">
-                                                                {adminKey ? (
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => deleteWall(m.id)}
-                                                                        disabled={wallDeletingId === m.id}
-                                                                        className={[
-                                                                            "rounded-2xl px-3 py-2",
-                                                                            "text-[11px] font-semibold text-white/85",
-                                                                            "bg-white/10 ring-1 ring-white/20",
-                                                                            "hover:bg-white/14",
-                                                                            "transition-all duration-200 ease-out",
-                                                                            "disabled:opacity-60 disabled:cursor-not-allowed",
-                                                                            "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
-                                                                        ].join(" ")}
-                                                                    >
-                                                                        {wallDeletingId === m.id ? "Deleting…" : "Delete"}
-                                                                    </button>
-                                                                ) : null}
-
-                                                                <span className="grid h-8 w-8 place-items-center rounded-2xl bg-white/12 ring-1 ring-white/18 text-[13px]">
-                                                                    💌
-                                                                </span>
-                                                            </div>
+                                                            <p className="mt-3 text-white/60 text-[10px] sm:text-[11px] font-semibold">
+                                                                {m.ts ? new Date(m.ts).toLocaleString() : ""}
+                                                            </p>
                                                         </div>
-
-                                                        <p className="mt-3 text-white/60 text-[10px] sm:text-[11px] font-semibold">
-                                                            {m.ts ? new Date(m.ts).toLocaleString() : ""}
-                                                        </p>
-                                                    </div>
-                                                ))}
+                                                    );
+                                                })}
                                             </div>
                                         </div>
                                     )}

@@ -1,3 +1,4 @@
+// pages/api/messages.jsx (or wherever your API route file is)
 import crypto from "node:crypto";
 import { Redis } from "@upstash/redis";
 
@@ -9,6 +10,13 @@ const LIMIT = 120;
 const isAdmin = (req) => {
   const key = req.headers["x-admin-key"];
   return key && process.env.WALL_ADMIN_KEY && key === process.env.WALL_ADMIN_KEY;
+};
+
+const ownerHashFromToken = (token) => {
+  const t = String(token || "").trim();
+  if (!t) return "";
+  const pepper = process.env.WALL_OWNER_PEPPER || process.env.WALL_ADMIN_KEY || "";
+  return crypto.createHash("sha256").update(`${pepper}:${t}`).digest("hex");
 };
 
 export default async function handler(req, res) {
@@ -30,16 +38,19 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "POST") {
-      const { name, text } = req.body || {};
+      const { name, text, ownerToken } = req.body || {};
       const cleanText = String(text || "").trim();
       if (!cleanText) return res.status(400).json({ error: "Message required" });
 
       const cleanName = String(name || "").trim().slice(0, 40);
+      const owner = ownerHashFromToken(ownerToken);
+
       const msg = {
         id: crypto.randomUUID(),
         name: cleanName,
         text: cleanText.slice(0, 600),
         ts: Date.now(),
+        owner: owner || "",
       };
 
       await redis.lpush(KEY, JSON.stringify(msg));
@@ -50,8 +61,6 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "DELETE") {
-      if (!isAdmin(req)) return res.status(401).json({ error: "Unauthorized" });
-
       const { id } = req.query || {};
       if (!id) return res.status(400).json({ error: "id required" });
 
@@ -67,7 +76,17 @@ export default async function handler(req, res) {
 
       if (idx === -1) return res.status(404).json({ error: "Not found" });
 
-      const target = items[idx];
+      const raw = items[idx];
+      const target = typeof raw === "string" ? JSON.parse(raw) : raw;
+
+      if (!isAdmin(req)) {
+        const ownerToken = req.headers["x-owner-token"];
+        const owner = ownerHashFromToken(ownerToken);
+
+        if (!owner) return res.status(401).json({ error: "Unauthorized" });
+        if (!target?.owner || target.owner !== owner) return res.status(403).json({ error: "Forbidden" });
+      }
+
       await redis.lset(KEY, idx, "__DELETED__");
       await redis.lrem(KEY, 1, "__DELETED__");
 
