@@ -6,6 +6,11 @@ const redis = Redis.fromEnv();
 const KEY = "jex_wall_messages";
 const LIMIT = 120;
 
+const isAdmin = (req) => {
+  const key = req.headers["x-admin-key"];
+  return key && process.env.WALL_ADMIN_KEY && key === process.env.WALL_ADMIN_KEY;
+};
+
 export default async function handler(req, res) {
   try {
     if (req.method === "GET") {
@@ -41,6 +46,32 @@ export default async function handler(req, res) {
       await redis.ltrim(KEY, 0, LIMIT - 1);
 
       res.status(200).json({ ok: true, message: msg });
+      return;
+    }
+
+    if (req.method === "DELETE") {
+      if (!isAdmin(req)) return res.status(401).json({ error: "Unauthorized" });
+
+      const { id } = req.query || {};
+      if (!id) return res.status(400).json({ error: "id required" });
+
+      const items = await redis.lrange(KEY, 0, LIMIT - 1);
+      const idx = (items || []).findIndex((x) => {
+        try {
+          const m = typeof x === "string" ? JSON.parse(x) : x;
+          return m?.id === id;
+        } catch {
+          return false;
+        }
+      });
+
+      if (idx === -1) return res.status(404).json({ error: "Not found" });
+
+      const target = items[idx];
+      await redis.lset(KEY, idx, "__DELETED__");
+      await redis.lrem(KEY, 1, "__DELETED__");
+
+      res.status(200).json({ ok: true });
       return;
     }
 

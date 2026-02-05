@@ -20,6 +20,9 @@ export default function Navigation() {
     const [wallPosting, setWallPosting] = useState(false);
     const [wallError, setWallError] = useState("");
 
+    const [adminKey, setAdminKey] = useState(() => localStorage.getItem("jex_wall_admin_key") || "");
+    const [wallDeletingId, setWallDeletingId] = useState(null);
+
     const pollRef = useRef(null);
 
     useEffect(() => {
@@ -109,6 +112,10 @@ export default function Navigation() {
     useEffect(() => {
         localStorage.setItem("jex_wall_name", wallName);
     }, [wallName]);
+
+    useEffect(() => {
+        localStorage.setItem("jex_wall_admin_key", adminKey);
+    }, [adminKey]);
 
     const openOverlay = () => {
         localStorage.setItem("jex_overlay_open", "1");
@@ -282,6 +289,24 @@ export default function Navigation() {
             setWallError("Could not post your message. Try again.");
         } finally {
             setWallPosting(false);
+        }
+    };
+
+    const deleteWall = async (id) => {
+        if (!adminKey) return;
+        setWallDeletingId(id);
+        setWallError("");
+        try {
+            const res = await fetch(`/api/messages?id=${encodeURIComponent(id)}`, {
+                method: "DELETE",
+                headers: { "x-admin-key": adminKey },
+            });
+            if (!res.ok) throw new Error("Failed to delete.");
+            await fetchWall({ silent: true });
+        } catch (e) {
+            setWallError("Could not delete the message. Check your admin key.");
+        } finally {
+            setWallDeletingId(null);
         }
     };
 
@@ -606,9 +631,7 @@ export default function Navigation() {
                                 <div className="flex items-center justify-between gap-2 px-4 sm:px-5 py-3 border-b border-white/12">
                                     <div className="min-w-0">
                                         <p className="text-white font-extrabold tracking-tight">Wall Posts</p>
-                                        <p className="text-white/70 text-[11px] sm:text-xs">
-                                            Auto-refresh every 5 seconds
-                                        </p>
+                                        <p className="text-white/70 text-[11px] sm:text-xs">Auto-refresh every 5 seconds</p>
                                     </div>
 
                                     <div className="flex items-center gap-2">
@@ -678,9 +701,31 @@ export default function Navigation() {
                                                                     {m.text}
                                                                 </p>
                                                             </div>
-                                                            <span className="shrink-0 grid h-8 w-8 place-items-center rounded-2xl bg-white/12 ring-1 ring-white/18 text-[13px]">
-                                                                💌
-                                                            </span>
+
+                                                            <div className="shrink-0 flex items-center gap-2">
+                                                                {adminKey ? (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => deleteWall(m.id)}
+                                                                        disabled={wallDeletingId === m.id}
+                                                                        className={[
+                                                                            "rounded-2xl px-3 py-2",
+                                                                            "text-[11px] font-semibold text-white/85",
+                                                                            "bg-white/10 ring-1 ring-white/20",
+                                                                            "hover:bg-white/14",
+                                                                            "transition-all duration-200 ease-out",
+                                                                            "disabled:opacity-60 disabled:cursor-not-allowed",
+                                                                            "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+                                                                        ].join(" ")}
+                                                                    >
+                                                                        {wallDeletingId === m.id ? "Deleting…" : "Delete"}
+                                                                    </button>
+                                                                ) : null}
+
+                                                                <span className="grid h-8 w-8 place-items-center rounded-2xl bg-white/12 ring-1 ring-white/18 text-[13px]">
+                                                                    💌
+                                                                </span>
+                                                            </div>
                                                         </div>
 
                                                         <p className="mt-3 text-white/60 text-[10px] sm:text-[11px] font-semibold">
@@ -738,6 +783,23 @@ export default function Navigation() {
                                             "ring-1 ring-white/18",
                                             "focus:outline-none focus:ring-2 focus:ring-white/70",
                                             "text-sm font-semibold leading-relaxed",
+                                        ].join(" ")}
+                                    />
+                                </label>
+
+                                <label className="mt-4 block">
+                                    <span className="block text-white/80 text-xs font-semibold">Admin key (only for you)</span>
+                                    <input
+                                        value={adminKey}
+                                        onChange={(e) => setAdminKey(e.target.value)}
+                                        placeholder="Paste your admin key"
+                                        className={[
+                                            "mt-2 w-full",
+                                            "rounded-2xl px-4 py-2.5",
+                                            "bg-white/10 text-white placeholder:text-white/45",
+                                            "ring-1 ring-white/18",
+                                            "focus:outline-none focus:ring-2 focus:ring-white/70",
+                                            "text-sm font-semibold",
                                         ].join(" ")}
                                     />
                                 </label>
