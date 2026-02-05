@@ -1,7 +1,8 @@
-// Menu.jsx
+// homepage/Menu.jsx
 import Navigation from "../components/Navigation";
 import Hero from "../components/Hero";
 import Footer from "../components/Footer";
+
 
 export default function Menu() {
     return (

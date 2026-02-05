@@ -1,3 +1,4 @@
+// App.jsx
 import React, { createContext, useEffect, useMemo, useState } from "react";
 import Menu from "./homepage/Menu";
 
