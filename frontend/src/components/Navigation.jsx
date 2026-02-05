@@ -726,16 +726,7 @@ export default function Navigation() {
                                     </div>
 
                                     <div className="mt-3 flex flex-wrap items-center gap-2">
-                                        <span className="inline-flex items-center gap-2 rounded-full bg-white/10 ring-1 ring-white/18 px-3 py-1.5 text-[11px] font-semibold text-white/85">
-                                            <span className="grid h-5 w-5 place-items-center rounded-full bg-white/12">🧾</span>
-                                            {wallStats.total} total
-                                        </span>
-
-                                        <span className="inline-flex items-center gap-2 rounded-full bg-white/10 ring-1 ring-white/18 px-3 py-1.5 text-[11px] font-semibold text-white/85">
-                                            <span className="grid h-5 w-5 place-items-center rounded-full bg-white/12">🫶</span>
-                                            {wallStats.mine} mine
-                                        </span>
-
+                                       
                                       
                                     </div>
                                 </div>
