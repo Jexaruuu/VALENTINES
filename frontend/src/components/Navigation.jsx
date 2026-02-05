@@ -1,5 +1,5 @@
 // components/Navigation.jsx
-import React, { useContext, useEffect, useMemo, useState } from "react";
+import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { ThemeContext } from "../App";
 
 export default function Navigation() {
@@ -8,9 +8,19 @@ export default function Navigation() {
 
     const [overlayOpen, setOverlayOpen] = useState(() => localStorage.getItem("jex_overlay_open") === "1");
     const [galleryOpen, setGalleryOpen] = useState(() => localStorage.getItem("jex_gallery_open") === "1");
+    const [messageOpen, setMessageOpen] = useState(() => localStorage.getItem("jex_message_open") === "1");
 
     const [choice, setChoice] = useState(() => localStorage.getItem("jex_can_i_choice") || "none");
     const [noStep, setNoStep] = useState(() => Number(localStorage.getItem("jex_can_i_no_step") || "0"));
+
+    const [wallName, setWallName] = useState(() => localStorage.getItem("jex_wall_name") || "");
+    const [wallText, setWallText] = useState("");
+    const [wallMessages, setWallMessages] = useState([]);
+    const [wallLoading, setWallLoading] = useState(false);
+    const [wallPosting, setWallPosting] = useState(false);
+    const [wallError, setWallError] = useState("");
+
+    const pollRef = useRef(null);
 
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 10);
@@ -58,7 +68,26 @@ export default function Navigation() {
     }, []);
 
     useEffect(() => {
-        if (!overlayOpen && !galleryOpen) return;
+        const sync = () => setMessageOpen(localStorage.getItem("jex_message_open") === "1");
+        const onOpen = () => setMessageOpen(true);
+        const onClose = () => setMessageOpen(false);
+        const onStorage = (e) => {
+            if (e.key === "jex_message_open") sync();
+        };
+
+        window.addEventListener("jex_message_open", onOpen);
+        window.addEventListener("jex_message_close", onClose);
+        window.addEventListener("storage", onStorage);
+
+        return () => {
+            window.removeEventListener("jex_message_open", onOpen);
+            window.removeEventListener("jex_message_close", onClose);
+            window.removeEventListener("storage", onStorage);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!overlayOpen && !galleryOpen && !messageOpen) return;
         const prevHtml = document.documentElement.style.overflow;
         const prevBody = document.body.style.overflow;
         document.documentElement.style.overflow = "hidden";
@@ -67,7 +96,7 @@ export default function Navigation() {
             document.documentElement.style.overflow = prevHtml;
             document.body.style.overflow = prevBody;
         };
-    }, [overlayOpen, galleryOpen]);
+    }, [overlayOpen, galleryOpen, messageOpen]);
 
     useEffect(() => {
         localStorage.setItem("jex_can_i_choice", choice);
@@ -76,6 +105,10 @@ export default function Navigation() {
     useEffect(() => {
         localStorage.setItem("jex_can_i_no_step", String(noStep));
     }, [noStep]);
+
+    useEffect(() => {
+        localStorage.setItem("jex_wall_name", wallName);
+    }, [wallName]);
 
     const openOverlay = () => {
         localStorage.setItem("jex_overlay_open", "1");
@@ -95,6 +128,16 @@ export default function Navigation() {
     const closeGalleryOverlay = () => {
         localStorage.setItem("jex_gallery_open", "0");
         window.dispatchEvent(new Event("jex_gallery_close"));
+    };
+
+    const openMessageOverlay = () => {
+        localStorage.setItem("jex_message_open", "1");
+        window.dispatchEvent(new Event("jex_message_open"));
+    };
+
+    const closeMessageOverlay = () => {
+        localStorage.setItem("jex_message_open", "0");
+        window.dispatchEvent(new Event("jex_message_close"));
     };
 
     const resetCanI = () => {
@@ -182,6 +225,72 @@ export default function Navigation() {
         ],
         []
     );
+
+    const fetchWall = async ({ silent = false } = {}) => {
+        if (!silent) setWallLoading(true);
+        setWallError("");
+        try {
+            const res = await fetch("/api/messages", { method: "GET" });
+            if (!res.ok) throw new Error("Failed to load messages.");
+            const data = await res.json();
+            setWallMessages(Array.isArray(data?.messages) ? data.messages : []);
+        } catch (e) {
+            if (!silent) setWallError("Could not load the Freedom Wall right now.");
+        } finally {
+            if (!silent) setWallLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!messageOpen) {
+            if (pollRef.current) {
+                clearInterval(pollRef.current);
+                pollRef.current = null;
+            }
+            return;
+        }
+
+        fetchWall();
+        pollRef.current = setInterval(() => fetchWall({ silent: true }), 5000);
+
+        return () => {
+            if (pollRef.current) {
+                clearInterval(pollRef.current);
+                pollRef.current = null;
+            }
+        };
+    }, [messageOpen]);
+
+    const postWall = async () => {
+        const name = (wallName || "").trim();
+        const text = (wallText || "").trim();
+        if (!text) return;
+
+        setWallPosting(true);
+        setWallError("");
+
+        try {
+            const res = await fetch("/api/messages", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, text }),
+            });
+            if (!res.ok) throw new Error("Failed to post.");
+            setWallText("");
+            await fetchWall({ silent: true });
+        } catch (e) {
+            setWallError("Could not post your message. Try again.");
+        } finally {
+            setWallPosting(false);
+        }
+    };
+
+    const onWallKeyDown = (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+            e.preventDefault();
+            postWall();
+        }
+    };
 
     if (overlayOpen) {
         const isDefault = choice === "none";
@@ -346,10 +455,8 @@ export default function Navigation() {
                 <div className="relative z-10 min-h-[100svh] w-full px-4 py-6 sm:py-10 flex items-center justify-center">
                     <div className="w-full max-w-6xl" onClick={(e) => e.stopPropagation()}>
                         <div className="mx-auto max-w-2xl text-center">
-                          
-
                             <p className="mt-4 text-[22px] sm:text-[34px] leading-tight font-black tracking-tight text-white drop-shadow-[0_10px_24px_rgba(0,0,0,0.35)]">
-                             Memories Gallery
+                                Memories Gallery
                             </p>
 
                             <p className="mt-2 text-[12px] sm:text-sm font-medium text-white/80">
@@ -436,12 +543,253 @@ export default function Navigation() {
                             </div>
                         </div>
 
-                        <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
-                           
+                        <div className="mt-6 sm:mt-8 flex justify-center">
+                            <button
+                                type="button"
+                                onClick={closeGalleryOverlay}
+                                className={[
+                                    "inline-flex items-center justify-center gap-2",
+                                    "rounded-3xl px-5 py-2.5",
+                                    "text-sm font-extrabold",
+                                    "text-slate-900 bg-white",
+                                    "shadow-[0_22px_55px_-40px_rgba(0,0,0,0.8)]",
+                                    "transition-all duration-200 ease-out",
+                                    "hover:-translate-y-0.5 active:translate-y-0",
+                                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+                                ].join(" ")}
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
+    if (messageOpen) {
+        return (
+            <div
+                className="fixed inset-0 z-[999] font-['Poppins']"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Message overlay"
+                onClick={closeMessageOverlay}
+            >
+                <div className="absolute inset-0 bg-black/30 backdrop-blur-md" aria-hidden="true" />
+
+                <div className="relative z-10 min-h-[100svh] w-full px-4 py-6 sm:py-10 flex items-center justify-center">
+                    <div className="w-full max-w-5xl" onClick={(e) => e.stopPropagation()}>
+                        <div className="mx-auto max-w-2xl text-center">
+                            <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/18 bg-white/10 px-4 py-2 text-[11px] font-semibold tracking-wide text-white/85">
+                                <span className="grid h-5 w-5 place-items-center rounded-full bg-white/15">🧸</span>
+                                Freedom Wall
+                            </div>
+
+                            <p className="mt-4 text-[22px] sm:text-[34px] leading-tight font-black tracking-tight text-white drop-shadow-[0_10px_24px_rgba(0,0,0,0.35)]">
+                                Leave a message for each other
+                            </p>
+
+                            <p className="mt-2 text-[12px] sm:text-sm font-medium text-white/80">
+                                Post something sweet, funny, or random. Everyone can see it.
+                            </p>
                         </div>
 
-                      
+                        <div className="mt-6 sm:mt-8 grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,360px)] items-start">
+                            <div
+                                className={[
+                                    "rounded-3xl border border-white/18 bg-white/12 backdrop-blur-md",
+                                    "shadow-[0_22px_60px_-45px_rgba(0,0,0,0.85)]",
+                                    "overflow-hidden",
+                                ].join(" ")}
+                            >
+                                <div className="flex items-center justify-between gap-2 px-4 sm:px-5 py-3 border-b border-white/12">
+                                    <div className="min-w-0">
+                                        <p className="text-white font-extrabold tracking-tight">Wall Posts</p>
+                                        <p className="text-white/70 text-[11px] sm:text-xs">
+                                            Auto-refresh every 5 seconds
+                                        </p>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => fetchWall()}
+                                            className={[
+                                                "rounded-2xl px-3 py-2",
+                                                "text-[11px] font-semibold text-white/85",
+                                                "bg-white/10 ring-1 ring-white/20",
+                                                "hover:bg-white/14",
+                                                "transition-all duration-200 ease-out",
+                                                "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+                                            ].join(" ")}
+                                        >
+                                            Refresh
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={closeMessageOverlay}
+                                            className={[
+                                                "rounded-2xl px-3 py-2",
+                                                "text-[11px] font-semibold text-white/85",
+                                                "bg-white/10 ring-1 ring-white/20",
+                                                "hover:bg-white/14",
+                                                "transition-all duration-200 ease-out",
+                                                "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+                                            ].join(" ")}
+                                        >
+                                            Close
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="p-3 sm:p-4">
+                                    {wallError ? (
+                                        <div className="rounded-3xl bg-white/10 ring-1 ring-white/18 p-4 text-center text-white/85 text-sm font-semibold">
+                                            {wallError}
+                                        </div>
+                                    ) : wallLoading ? (
+                                        <div className="rounded-3xl bg-white/10 ring-1 ring-white/18 p-5 text-center text-white/80 text-sm font-semibold">
+                                            Loading messages…
+                                        </div>
+                                    ) : wallMessages.length === 0 ? (
+                                        <div className="rounded-3xl bg-white/10 ring-1 ring-white/18 p-5 text-center text-white/80 text-sm font-semibold">
+                                            No messages yet. Be the first 🫶
+                                        </div>
+                                    ) : (
+                                        <div className="max-h-[58svh] overflow-auto pr-1">
+                                            <div className="grid gap-2.5">
+                                                {wallMessages.map((m) => (
+                                                    <div
+                                                        key={m.id}
+                                                        className={[
+                                                            "rounded-3xl bg-white/10 ring-1 ring-white/18",
+                                                            "p-4",
+                                                            "shadow-[0_18px_50px_-40px_rgba(0,0,0,0.85)]",
+                                                        ].join(" ")}
+                                                    >
+                                                        <div className="flex items-start justify-between gap-3">
+                                                            <div className="min-w-0">
+                                                                <p className="text-white font-extrabold text-sm tracking-tight truncate">
+                                                                    {m.name ? m.name : "Anonymous"}
+                                                                </p>
+                                                                <p className="mt-2 text-white/90 text-sm leading-relaxed whitespace-pre-wrap break-words">
+                                                                    {m.text}
+                                                                </p>
+                                                            </div>
+                                                            <span className="shrink-0 grid h-8 w-8 place-items-center rounded-2xl bg-white/12 ring-1 ring-white/18 text-[13px]">
+                                                                💌
+                                                            </span>
+                                                        </div>
+
+                                                        <p className="mt-3 text-white/60 text-[10px] sm:text-[11px] font-semibold">
+                                                            {m.ts ? new Date(m.ts).toLocaleString() : ""}
+                                                        </p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div
+                                className={[
+                                    "rounded-3xl border border-white/18 bg-white/12 backdrop-blur-md",
+                                    "shadow-[0_22px_60px_-45px_rgba(0,0,0,0.85)]",
+                                    "p-4 sm:p-5",
+                                ].join(" ")}
+                            >
+                                <p className="text-white font-extrabold tracking-tight">Write a post</p>
+                                <p className="mt-1 text-white/70 text-[11px] sm:text-xs font-semibold">
+                                    Tip: Ctrl/⌘ + Enter to send
+                                </p>
+
+                                <label className="mt-4 block">
+                                    <span className="block text-white/80 text-xs font-semibold">Name (optional)</span>
+                                    <input
+                                        value={wallName}
+                                        onChange={(e) => setWallName(e.target.value)}
+                                        placeholder="e.g. Adoy"
+                                        className={[
+                                            "mt-2 w-full",
+                                            "rounded-2xl px-4 py-2.5",
+                                            "bg-white/10 text-white placeholder:text-white/45",
+                                            "ring-1 ring-white/18",
+                                            "focus:outline-none focus:ring-2 focus:ring-white/70",
+                                            "text-sm font-semibold",
+                                        ].join(" ")}
+                                    />
+                                </label>
+
+                                <label className="mt-4 block">
+                                    <span className="block text-white/80 text-xs font-semibold">Message</span>
+                                    <textarea
+                                        value={wallText}
+                                        onChange={(e) => setWallText(e.target.value)}
+                                        onKeyDown={onWallKeyDown}
+                                        placeholder="Write something…"
+                                        rows={5}
+                                        className={[
+                                            "mt-2 w-full resize-none",
+                                            "rounded-2xl px-4 py-3",
+                                            "bg-white/10 text-white placeholder:text-white/45",
+                                            "ring-1 ring-white/18",
+                                            "focus:outline-none focus:ring-2 focus:ring-white/70",
+                                            "text-sm font-semibold leading-relaxed",
+                                        ].join(" ")}
+                                    />
+                                </label>
+
+                                <button
+                                    type="button"
+                                    onClick={postWall}
+                                    disabled={wallPosting || !(wallText || "").trim()}
+                                    className={[
+                                        "mt-4 w-full inline-flex items-center justify-center gap-2",
+                                        "rounded-3xl px-5 py-3",
+                                        "text-sm font-extrabold",
+                                        "text-slate-900 bg-white",
+                                        "shadow-[0_22px_55px_-40px_rgba(0,0,0,0.8)]",
+                                        "transition-all duration-200 ease-out",
+                                        "hover:-translate-y-0.5 active:translate-y-0",
+                                        "disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0",
+                                        "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+                                    ].join(" ")}
+                                >
+                                    <span className="grid h-5 w-5 place-items-center rounded-full bg-black/5">📨</span>
+                                    {wallPosting ? "Posting…" : "Post Message"}
+                                </button>
+
+                                <div className="mt-3 rounded-2xl bg-white/8 ring-1 ring-white/14 p-3">
+                                    <p className="text-white/80 text-[11px] font-semibold leading-relaxed">
+                                        This is shared for everyone who visits your site. Keep it nice 🫶
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-6 flex justify-center">
+                            <button
+                                type="button"
+                                onClick={closeMessageOverlay}
+                                className={[
+                                    "inline-flex items-center justify-center gap-2",
+                                    "rounded-3xl px-5 py-2.5",
+                                    "text-sm font-extrabold",
+                                    "text-white bg-white/12 ring-1 ring-white/22",
+                                    "shadow-[0_22px_55px_-40px_rgba(0,0,0,0.8)]",
+                                    "backdrop-blur",
+                                    "transition-all duration-200 ease-out",
+                                    "hover:-translate-y-0.5 hover:bg-white/16",
+                                    "active:translate-y-0",
+                                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+                                ].join(" ")}
+                            >
+                                Close
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -517,6 +865,28 @@ export default function Navigation() {
                                                 key={item.label}
                                                 type="button"
                                                 onClick={openGalleryOverlay}
+                                                className={[
+                                                    "group/link relative isolate rounded-3xl px-4 py-2 text-sm font-semibold",
+                                                    "text-slate-700",
+                                                    "transition-all duration-200 ease-out",
+                                                    "hover:text-[var(--accent-text)]",
+                                                    "hover:-translate-y-0.5 active:translate-y-0",
+                                                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-white/70",
+                                                ].join(" ")}
+                                            >
+                                                <span className="relative z-10">{item.label}</span>
+                                                <span className="pointer-events-none absolute inset-0 -z-10 rounded-3xl bg-white/85 opacity-0 shadow-[0_14px_28px_-24px_var(--shadow)] transition-opacity duration-200 ease-out group-hover/link:opacity-100" />
+                                                <span className="pointer-events-none absolute inset-x-4 bottom-1.5 h-0.5 origin-left scale-x-0 rounded-full bg-[var(--accent-solid)] transition-transform duration-200 ease-out group-hover/link:scale-x-100" />
+                                            </button>
+                                        );
+                                    }
+
+                                    if (item.label === "Message") {
+                                        return (
+                                            <button
+                                                key={item.label}
+                                                type="button"
+                                                onClick={openMessageOverlay}
                                                 className={[
                                                     "group/link relative isolate rounded-3xl px-4 py-2 text-sm font-semibold",
                                                     "text-slate-700",
@@ -649,8 +1019,9 @@ export default function Navigation() {
                                     <span className="truncate">Gallery</span>
                                 </button>
 
-                                <a
-                                    href="#message"
+                                <button
+                                    type="button"
+                                    onClick={openMessageOverlay}
                                     className={[
                                         "group/mob inline-flex items-center justify-center gap-1.5",
                                         "rounded-3xl px-3 py-2 text-[11px] font-semibold text-[var(--accent-text)]",
@@ -663,7 +1034,7 @@ export default function Navigation() {
                                 >
                                     <span className="transition-transform duration-200 ease-out group-hover/mob:scale-[1.07]">💌</span>
                                     <span className="truncate">Message</span>
-                                </a>
+                                </button>
                             </div>
 
                             <button
