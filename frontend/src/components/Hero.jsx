@@ -1031,7 +1031,7 @@ export default function Hero() {
                   </span>
                   <div className="min-w-0">
                     <div className="text-sm font-extrabold text-slate-900">
-                      Special Valentine Message
+                      Special Valentine Message for ADOY
                     </div>
                     <div className="text-[11px] font-semibold text-slate-500">
                       For you, with love 💗
@@ -1051,18 +1051,14 @@ export default function Hero() {
               <div className="px-5 pb-5 pt-4">
                 <div className="rounded-[22px] border border-[var(--soft-border)] bg-white/80 p-4 sm:p-5">
                   <div className="text-sm sm:text-[15px] font-semibold leading-relaxed text-slate-700">
-                    Happy Valentine’s! 🌹<br />
-                    Thank you for being a part of my day — you make things feel
-                    lighter, warmer, and sweeter. I hope this little surprise made you
-                    smile. Always take care, and keep being you. 💞
+                    Hello Adoy, 🌹<br />
+                    Happy Valentine's Day, Kamusta ikaw? I'm here ulet. I hope na hindi ka pa nakukulitan sa akin huhu, Alam mo ba na hindi ko alam kung pano ko hihigitan yung previous na ginawa ko para sayo huhu, gusto ko lang talaga na mapasaya ang isang Aila Medel kahit na simpleng bagay lang kaya ginagawa ko parin tong mga to, and I hope nagugustuhan mo po, kaya sana hayaan mo lang ako ha, na i pa feel sayo yung deserved mo, kahit walang kapalit gagawin ko parin naman to ng paulit-ulit hehe. Pero I just wanna say na super thankful ako na nakilala kita, alam ko na ang weird kasi hindi naman kita nakikita tsaka nakakasama diba? Pero hindi ko alam yun nararamdaman ko. Alam mo ba isa ka sa naging inspirasyon ko habang nasa thesis arc ako, kaya gusto ko rin talaga mag thankyou sayo adoyyy! Palagi kang kasama sa prayers ko at wish ko always na maging masaya ka lang palagi, kayo ni baby Aqui. Hoping din ako na someday magkita ulet tayo and syempre makita din si baby aqui hehe. So ayun lang, Sana nagustuhan mo to and sana napangiti kita kahit papano hehehe. Ingat palagi Adoyyyyy! 💗<br />
                   </div>
                   <div className="mt-4 flex items-center justify-between">
                     <div className="text-[11px] font-bold text-slate-500">
                       Sealed with love
                     </div>
-                    <div className="text-[11px] font-extrabold text-[var(--accent-text)]">
-                      💌
-                    </div>
+                    
                   </div>
                 </div>
               </div>
