@@ -673,7 +673,7 @@ export default function Navigation() {
                             </div>
 
                             <p className="mt-4 text-[22px] sm:text-[36px] leading-tight font-black tracking-tight text-white drop-shadow-[0_10px_24px_rgba(0,0,0,0.35)]">
-                                Leave a message for each other
+                                Random Thoughts & Messages
                             </p>
 
                             <p className="mt-2 text-[12px] sm:text-sm font-medium text-white/80">
@@ -736,10 +736,7 @@ export default function Navigation() {
                                             {wallStats.mine} mine
                                         </span>
 
-                                        <span className="inline-flex items-center gap-2 rounded-full bg-white/10 ring-1 ring-white/18 px-3 py-1.5 text-[11px] font-semibold text-white/75">
-                                            <span className="grid h-5 w-5 place-items-center rounded-full bg-white/12">⌘</span>
-                                            Ctrl/⌘ + Enter to send
-                                        </span>
+                                      
                                     </div>
                                 </div>
 
@@ -831,14 +828,12 @@ export default function Navigation() {
                             <div className="rounded-3xl border border-white/18 bg-white/12 backdrop-blur-md shadow-[0_22px_60px_-45px_rgba(0,0,0,0.85)] overflow-hidden">
                                 <div className="px-4 sm:px-5 py-3 border-b border-white/12">
                                     <p className="text-white font-extrabold tracking-tight">Write a post</p>
-                                    <p className="mt-0.5 text-white/70 text-[11px] sm:text-xs font-semibold">
-                                        Be kind. Everyone can read it.
-                                    </p>
+                                   
                                 </div>
 
                                 <div className="p-4 sm:p-5">
                                     <label className="block">
-                                        <span className="block text-white/80 text-xs font-semibold">Name (optional)</span>
+                                        <span className="block text-white/80 text-xs font-semibold">Name </span>
                                         <input
                                             value={wallName}
                                             onChange={(e) => setWallName(e.target.value)}
@@ -894,11 +889,7 @@ export default function Navigation() {
                                             {wallPosting ? "Posting…" : "Post Message"}
                                         </button>
 
-                                        <div className="rounded-2xl bg-white/8 ring-1 ring-white/14 p-3">
-                                            <p className="text-white/80 text-[11px] font-semibold leading-relaxed">
-                                                Tip: Your posts can be deleted only by you (from this device/browser).
-                                            </p>
-                                        </div>
+                                   
                                     </div>
                                 </div>
                             </div>
