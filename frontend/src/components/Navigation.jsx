@@ -1,4 +1,3 @@
-// components/Navigation.jsx
 import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { ThemeContext } from "../App";
 
@@ -9,6 +8,7 @@ export default function Navigation() {
     const [overlayOpen, setOverlayOpen] = useState(() => localStorage.getItem("jex_overlay_open") === "1");
     const [galleryOpen, setGalleryOpen] = useState(() => localStorage.getItem("jex_gallery_open") === "1");
     const [messageOpen, setMessageOpen] = useState(() => localStorage.getItem("jex_message_open") === "1");
+    const [readOpen, setReadOpen] = useState(() => localStorage.getItem("jex_read_open") === "1");
 
     const [choice, setChoice] = useState(() => localStorage.getItem("jex_can_i_choice") || "none");
     const [noStep, setNoStep] = useState(() => Number(localStorage.getItem("jex_can_i_no_step") || "0"));
@@ -87,6 +87,25 @@ export default function Navigation() {
         return () => {
             window.removeEventListener("jex_message_open", onOpen);
             window.removeEventListener("jex_message_close", onClose);
+            window.removeEventListener("storage", onStorage);
+        };
+    }, []);
+
+    useEffect(() => {
+        const sync = () => setReadOpen(localStorage.getItem("jex_read_open") === "1");
+        const onOpen = () => setReadOpen(true);
+        const onClose = () => setReadOpen(false);
+        const onStorage = (e) => {
+            if (e.key === "jex_read_open") sync();
+        };
+
+        window.addEventListener("jex_read_open", onOpen);
+        window.addEventListener("jex_read_close", onClose);
+        window.addEventListener("storage", onStorage);
+
+        return () => {
+            window.removeEventListener("jex_read_open", onOpen);
+            window.removeEventListener("jex_read_close", onClose);
             window.removeEventListener("storage", onStorage);
         };
     }, []);
@@ -725,10 +744,7 @@ export default function Navigation() {
                                         </div>
                                     </div>
 
-                                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                                       
-                                      
-                                    </div>
+                                    <div className="mt-3 flex flex-wrap items-center gap-2"></div>
                                 </div>
 
                                 <div className="p-3 sm:p-4">
@@ -819,7 +835,6 @@ export default function Navigation() {
                             <div className="rounded-3xl border border-white/18 bg-white/12 backdrop-blur-md shadow-[0_22px_60px_-45px_rgba(0,0,0,0.85)] overflow-hidden">
                                 <div className="px-4 sm:px-5 py-3 border-b border-white/12">
                                     <p className="text-white font-extrabold tracking-tight">Write a post</p>
-                                   
                                 </div>
 
                                 <div className="p-4 sm:p-5">
@@ -879,8 +894,6 @@ export default function Navigation() {
                                             <span className="grid h-5 w-5 place-items-center rounded-full bg-black/5">📨</span>
                                             {wallPosting ? "Posting…" : "Post Message"}
                                         </button>
-
-                                   
                                     </div>
                                 </div>
                             </div>
@@ -953,6 +966,8 @@ export default function Navigation() {
                         <nav className="hidden items-center gap-2 sm:flex" aria-label="Primary navigation">
                             <div className="flex items-center rounded-3xl border border-[var(--soft-border)] bg-[var(--pill)] p-1 backdrop-blur transition-all duration-300 ease-out group-hover:bg-[var(--pill-strong)]">
                                 {navItems.map((item) => {
+                                    if (item.label === "Will You?" && readOpen) return null;
+
                                     if (item.label === "Will You?") {
                                         return (
                                             <button
@@ -1100,23 +1115,30 @@ export default function Navigation() {
 
                     <div className="sm:hidden">
                         <div className="px-3 pb-3 space-y-2">
-                            <div className="grid grid-cols-3 gap-2 rounded-3xl border border-[var(--soft-border)] bg-[var(--pill)] p-2 backdrop-blur">
-                                <button
-                                    type="button"
-                                    onClick={openOverlay}
-                                    className={[
-                                        "group/mob inline-flex items-center justify-center gap-1.5",
-                                        "rounded-3xl px-3 py-2 text-[11px] font-semibold text-[var(--accent-text)]",
-                                        "bg-white/60 shadow-[0_12px_26px_-22px_var(--shadow)]",
-                                        "transition-all duration-200 ease-out",
-                                        "hover:-translate-y-0.5 hover:bg-white",
-                                        "active:translate-y-0",
-                                        "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-white/70",
-                                    ].join(" ")}
-                                >
-                                    <span className="transition-transform duration-200 ease-out group-hover/mob:scale-[1.07]">❓</span>
-                                    <span className="truncate">Will You?</span>
-                                </button>
+                            <div
+                                className={[
+                                    "grid gap-2 rounded-3xl border border-[var(--soft-border)] bg-[var(--pill)] p-2 backdrop-blur",
+                                    readOpen ? "grid-cols-2" : "grid-cols-3",
+                                ].join(" ")}
+                            >
+                                {!readOpen ? (
+                                    <button
+                                        type="button"
+                                        onClick={openOverlay}
+                                        className={[
+                                            "group/mob inline-flex items-center justify-center gap-1.5",
+                                            "rounded-3xl px-3 py-2 text-[11px] font-semibold text-[var(--accent-text)]",
+                                            "bg-white/60 shadow-[0_12px_26px_-22px_var(--shadow)]",
+                                            "transition-all duration-200 ease-out",
+                                            "hover:-translate-y-0.5 hover:bg-white",
+                                            "active:translate-y-0",
+                                            "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-white/70",
+                                        ].join(" ")}
+                                    >
+                                        <span className="transition-transform duration-200 ease-out group-hover/mob:scale-[1.07]">❓</span>
+                                        <span className="truncate">Will You?</span>
+                                    </button>
+                                ) : null}
 
                                 <button
                                     type="button"

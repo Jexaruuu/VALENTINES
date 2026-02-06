@@ -1,4 +1,3 @@
-// Hero.jsx
 import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { ThemeContext } from "../App";
 
@@ -192,10 +191,17 @@ export default function Hero() {
     useEffect(() => {
         if (!envelopeOpen) {
             setValentineOpen(false);
+
+            localStorage.setItem("jex_read_open", "0");
+            window.dispatchEvent(new Event("jex_read_close"));
+
             localStorage.removeItem("jex_overlay_open");
             window.dispatchEvent(new Event("jex_overlay_close"));
             return;
         }
+
+        localStorage.setItem("jex_read_open", "1");
+        window.dispatchEvent(new Event("jex_read_open"));
 
         localStorage.setItem("jex_overlay_open", "1");
         window.dispatchEvent(new Event("jex_overlay_open"));
@@ -206,6 +212,10 @@ export default function Hero() {
         return () => {
             document.body.style.overflow = prevOverflow;
             setValentineOpen(false);
+
+            localStorage.setItem("jex_read_open", "0");
+            window.dispatchEvent(new Event("jex_read_close"));
+
             localStorage.removeItem("jex_overlay_open");
             window.dispatchEvent(new Event("jex_overlay_close"));
         };
@@ -218,6 +228,9 @@ export default function Hero() {
 
         localStorage.removeItem("valentine_match_unlocked");
         window.dispatchEvent(new Event("valentine_match_locked"));
+
+        localStorage.setItem("jex_read_open", "0");
+        window.dispatchEvent(new Event("jex_read_close"));
 
         setDeck(buildDeck());
         setFirstPick(null);
@@ -273,11 +286,7 @@ export default function Hero() {
         const isMatch = a.pairKey === b.pairKey;
 
         if (isMatch) {
-            setDeck((prev) =>
-                prev.map((c) =>
-                    c.id === a.id || c.id === b.id ? { ...c, matched: true, faceUp: true } : c
-                )
-            );
+            setDeck((prev) => prev.map((c) => (c.id === a.id || c.id === b.id ? { ...c, matched: true, faceUp: true } : c)));
             setScore((s) => s + 1);
             setJustMatchedKey(a.pairKey);
 
@@ -289,9 +298,7 @@ export default function Hero() {
             }, 420);
         } else {
             clearTimerRef.current = setTimeout(() => {
-                setDeck((prev) =>
-                    prev.map((c) => (c.id === a.id || c.id === b.id ? { ...c, faceUp: false } : c))
-                );
+                setDeck((prev) => prev.map((c) => (c.id === a.id || c.id === b.id ? { ...c, faceUp: false } : c)));
                 setFirstPick(null);
                 setSecondPick(null);
                 setLock(false);
@@ -593,12 +600,7 @@ export default function Hero() {
                                     ].join(" ")}
                                 >
                                     <span className="grid h-4 w-4 sm:h-5 sm:w-5 place-items-center overflow-hidden">
-                                        <img
-                                            src={NEW_GAME_ICON}
-                                            alt="New game"
-                                            className="h-full w-full object-cover"
-                                            draggable="false"
-                                        />
+                                        <img src={NEW_GAME_ICON} alt="New game" className="h-full w-full object-cover" draggable="false" />
                                     </span>
                                     Restart Game
                                 </button>
@@ -637,10 +639,7 @@ export default function Hero() {
                             <div className="mt-5 sm:mt-6 grid grid-cols-4 gap-2 sm:gap-3">
                                 {deck.map((card) => {
                                     const isUp = card.faceUp || card.matched;
-                                    const glow =
-                                        justMatchedKey &&
-                                        card.pairKey === justMatchedKey &&
-                                        card.matched;
+                                    const glow = justMatchedKey && card.pairKey === justMatchedKey && card.matched;
 
                                     return (
                                         <button
@@ -669,12 +668,7 @@ export default function Hero() {
                                                 >
                                                     <div className="grid place-items-center">
                                                         <div className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center overflow-hidden rounded-2xl bg-transparent shadow-none">
-                                                            <img
-                                                                src={CARD_BACK_IMG}
-                                                                alt="Card back"
-                                                                className="h-full w-full object-contain"
-                                                                draggable="false"
-                                                            />
+                                                            <img src={CARD_BACK_IMG} alt="Card back" className="h-full w-full object-contain" draggable="false" />
                                                         </div>
                                                         <div className="mt-2 text-[10px] sm:text-[11px] font-semibold tracking-wide text-slate-600">
                                                             Tap
@@ -699,9 +693,7 @@ export default function Hero() {
                                                                 draggable={false}
                                                             />
                                                         </div>
-                                                        <div className="text-[10px] sm:text-xs font-semibold text-slate-700">
-                                                            {card.label}
-                                                        </div>
+                                                        <div className="text-[10px] sm:text-xs font-semibold text-slate-700">{card.label}</div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -750,9 +742,7 @@ export default function Hero() {
 
                         <div className="rounded-[26px] sm:rounded-[28px] border border-[var(--soft-border)] bg-[var(--pill)] p-4 sm:p-6 shadow-[0_12px_26px_-22px_var(--shadow)] backdrop-blur">
                             <div className="mb-3 sm:mb-4">
-                                <div className={["text-lg sm:text-xl font-extrabold", labelAccent].join(" ")}>
-                                    Music Player
-                                </div>
+                                <div className={["text-lg sm:text-xl font-extrabold", labelAccent].join(" ")}>Music Player</div>
                                 <div className="mt-0.5 text-xs sm:text-sm font-semibold text-slate-600">
                                     Pick a song from the queue and enjoy the vibe.
                                 </div>
@@ -775,12 +765,8 @@ export default function Hero() {
                                     <div className="mt-4">
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="min-w-0">
-                                                <div className="truncate text-base sm:text-lg font-extrabold text-slate-900">
-                                                    {track?.title}
-                                                </div>
-                                                <div className="truncate text-xs sm:text-sm font-semibold text-slate-600">
-                                                    {track?.artist}
-                                                </div>
+                                                <div className="truncate text-base sm:text-lg font-extrabold text-slate-900">{track?.title}</div>
+                                                <div className="truncate text-xs sm:text-sm font-semibold text-slate-600">{track?.artist}</div>
                                             </div>
                                         </div>
 
@@ -821,12 +807,7 @@ export default function Hero() {
                                                 aria-label="Previous"
                                             >
                                                 <span className="grid h-5 w-5 place-items-center overflow-hidden">
-                                                    <img
-                                                        src={PREV_ICON}
-                                                        alt="Previous"
-                                                        className="h-full w-full object-contain"
-                                                        draggable="false"
-                                                    />
+                                                    <img src={PREV_ICON} alt="Previous" className="h-full w-full object-contain" draggable="false" />
                                                 </span>
                                             </button>
 
@@ -857,24 +838,14 @@ export default function Hero() {
                                                 aria-label="Next"
                                             >
                                                 <span className="grid h-5 w-5 place-items-center overflow-hidden">
-                                                    <img
-                                                        src={NEXT_ICON}
-                                                        alt="Next"
-                                                        className="h-full w-full object-contain"
-                                                        draggable="false"
-                                                    />
+                                                    <img src={NEXT_ICON} alt="Next" className="h-full w-full object-contain" draggable="false" />
                                                 </span>
                                             </button>
                                         </div>
 
                                         <div className="mt-4 flex items-center justify-start gap-3">
                                             <span className="grid h-5 w-5 place-items-center overflow-hidden">
-                                                <img
-                                                    src={VOLUME_ICON}
-                                                    alt="Volume"
-                                                    className="h-full w-full object-contain"
-                                                    draggable="false"
-                                                />
+                                                <img src={VOLUME_ICON} alt="Volume" className="h-full w-full object-contain" draggable="false" />
                                             </span>
 
                                             <input
@@ -882,9 +853,7 @@ export default function Hero() {
                                                 min={0}
                                                 max={100}
                                                 value={Math.round(volume * 100)}
-                                                onChange={(e) =>
-                                                    setVolume(Math.max(0, Math.min(1, Number(e.target.value) / 100)))
-                                                }
+                                                onChange={(e) => setVolume(Math.max(0, Math.min(1, Number(e.target.value) / 100)))}
                                                 className={["flex-1", rangeAccent].join(" ")}
                                             />
                                         </div>
@@ -917,27 +886,16 @@ export default function Hero() {
                                                 ].join(" ")}
                                             >
                                                 <div className="relative h-10 w-10 overflow-hidden rounded-2xl border border-[var(--soft-border)] bg-white/80">
-                                                    <img
-                                                        src={t.cover || BADGE_ICON}
-                                                        alt={t.title}
-                                                        className="h-full w-full object-cover"
-                                                        draggable="false"
-                                                    />
+                                                    <img src={t.cover || BADGE_ICON} alt={t.title} className="h-full w-full object-cover" draggable="false" />
                                                 </div>
                                                 <div className="min-w-0 flex-1">
-                                                    <div className="truncate text-sm font-extrabold text-slate-900">
-                                                        {t.title}
-                                                    </div>
-                                                    <div className="truncate text-xs font-semibold text-slate-600">
-                                                        {t.artist}
-                                                    </div>
+                                                    <div className="truncate text-sm font-extrabold text-slate-900">{t.title}</div>
+                                                    <div className="truncate text-xs font-semibold text-slate-600">{t.artist}</div>
                                                 </div>
                                                 <div
                                                     className={[
                                                         "shrink-0 rounded-2xl px-3 py-1 text-[11px] font-semibold",
-                                                        active
-                                                            ? "bg-[var(--accent-solid)] text-white"
-                                                            : "border border-[var(--soft-border)] bg-white/70 text-slate-700",
+                                                        active ? "bg-[var(--accent-solid)] text-white" : "border border-[var(--soft-border)] bg-white/70 text-slate-700",
                                                     ].join(" ")}
                                                 >
                                                     {active ? "Playing" : "Play"}
@@ -958,121 +916,102 @@ export default function Hero() {
                 </div>
             )}
 
-    {envelopeOpen && (
-  <div
-    className="fixed inset-0 z-[80]"
-    role="dialog"
-    aria-modal="true"
-    onMouseDown={() => setEnvelopeOpen(false)}
-  >
-    <div className="absolute inset-0 bg-black/35 backdrop-blur-md" />
+            {envelopeOpen && (
+                <div className="fixed inset-0 z-[80]" role="dialog" aria-modal="true" onMouseDown={() => setEnvelopeOpen(false)}>
+                    <div className="absolute inset-0 bg-black/35 backdrop-blur-md" />
 
-    <div className="relative mx-auto grid min-h-dvh place-items-center px-4 py-6">
-      <div
-        className="relative w-full max-w-[1100px]"
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <div className="relative mx-auto flex w-full items-center justify-center">
-          <div
-            className={[
-              "relative flex items-center justify-center",
-              "transition-transform duration-700 ease-out will-change-transform",
-              valentineOpen
-                ? "translate-x-0 lg:-translate-x-[220px]"
-                : "translate-x-0",
-            ].join(" ")}
-          >
-            <button
-              type="button"
-              onClick={() => setValentineOpen(true)}
-              className={[
-                "group relative grid place-items-center",
-                "bg-transparent border-0 shadow-none",
-                "transition-all duration-500 ease-out will-change-transform",
-                "hover:-translate-y-0.5",
-                "active:translate-y-0 active:scale-[0.99]",
-                "focus:outline-none",
-              ].join(" ")}
-              aria-label="Open message"
-            >
-              <img
-                src="/jex2.png"
-                alt="Jex"
-                className={[
-                  "max-h-[72vh] w-auto select-none outline-none",
-                  "transition-transform duration-500 ease-out will-change-transform",
-                ].join(" ")}
-                draggable="false"
-              />
-            </button>
-          </div>
+                    <div className="relative mx-auto grid min-h-dvh place-items-center px-4 py-6">
+                        <div className="relative w-full max-w-[1100px]" onMouseDown={(e) => e.stopPropagation()}>
+                            <div className="relative mx-auto flex w-full items-center justify-center">
+                                <div
+                                    className={[
+                                        "relative flex items-center justify-center",
+                                        "transition-transform duration-700 ease-out will-change-transform",
+                                        valentineOpen ? "translate-x-0 lg:-translate-x-[220px]" : "translate-x-0",
+                                    ].join(" ")}
+                                >
+                                    <button
+                                        type="button"
+                                        onClick={() => setValentineOpen(true)}
+                                        className={[
+                                            "group relative grid place-items-center",
+                                            "bg-transparent border-0 shadow-none",
+                                            "transition-all duration-500 ease-out will-change-transform",
+                                            "hover:-translate-y-0.5",
+                                            "active:translate-y-0 active:scale-[0.99]",
+                                            "focus:outline-none",
+                                        ].join(" ")}
+                                        aria-label="Open message"
+                                    >
+                                        <img
+                                            src="/jex2.png"
+                                            alt="Jex"
+                                            className={[
+                                                "max-h-[72vh] w-auto select-none outline-none",
+                                                "transition-transform duration-500 ease-out will-change-transform",
+                                            ].join(" ")}
+                                            draggable="false"
+                                        />
+                                    </button>
+                                </div>
 
-          <div
-            className={[
-              "absolute left-1/2 top-1/2 -translate-y-1/2",
-              "w-[min(440px,92vw)]",
-              "transition-all duration-700 ease-out will-change-transform",
-              valentineOpen
-                ? "opacity-100 translate-x-[100px] lg:translate-x-[20px]"
-                : "opacity-0 translate-x-0 pointer-events-none",
-            ].join(" ")}
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            <div className="relative overflow-hidden rounded-[30px] border border-white/20 bg-white/90 shadow-[0_22px_80px_-60px_rgba(0,0,0,0.8)]">
-              <div className="flex items-center justify-between gap-3 border-b border-black/5 bg-white/70 px-5 py-4">
-                <div className="flex items-center gap-2">
-                  <span className="grid h-9 w-9 place-items-center overflow-hidden rounded-2xl border border-black/10 bg-white">
-                    <img
-                      src={ENVELOPE_ICON}
-                      alt="Envelope"
-                      draggable="false"
-                      className="h-6 w-6 object-contain"
-                    />
-                  </span>
-                  <div className="min-w-0">
-                    <div className="text-sm font-extrabold text-slate-900">
-                      Special Valentine Message for ADOY
+                                <div
+                                    className={[
+                                        "absolute left-1/2 top-1/2 -translate-y-1/2",
+                                        "w-[min(440px,92vw)]",
+                                        "transition-all duration-700 ease-out will-change-transform",
+                                        valentineOpen ? "opacity-100 translate-x-[100px] lg:translate-x-[20px]" : "opacity-0 translate-x-0 pointer-events-none",
+                                    ].join(" ")}
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                >
+                                    <div className="relative overflow-hidden rounded-[30px] border border-white/20 bg-white/90 shadow-[0_22px_80px_-60px_rgba(0,0,0,0.8)]">
+                                        <div className="flex items-center justify-between gap-3 border-b border-black/5 bg-white/70 px-5 py-4">
+                                            <div className="flex items-center gap-2">
+                                                <span className="grid h-9 w-9 place-items-center overflow-hidden rounded-2xl border border-black/10 bg-white">
+                                                    <img
+                                                        src={ENVELOPE_ICON}
+                                                        alt="Envelope"
+                                                        draggable="false"
+                                                        className="h-6 w-6 object-contain"
+                                                    />
+                                                </span>
+                                                <div className="min-w-0">
+                                                    <div className="text-sm font-extrabold text-slate-900">
+                                                        Special Valentine Message for ADOY
+                                                    </div>
+                                                    <div className="text-[11px] font-semibold text-slate-500">For you, with love 💗</div>
+                                                </div>
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => setEnvelopeOpen(false)}
+                                                className="rounded-2xl border border-black/10 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+                                            >
+                                                Close
+                                            </button>
+                                        </div>
+
+                                        <div className="px-5 pb-5 pt-4">
+                                            <div className="rounded-[22px] border border-[var(--soft-border)] bg-white/80 p-4 sm:p-5">
+                                                <div className="text-sm sm:text-[15px] font-semibold leading-relaxed text-slate-700">
+                                                    Hello Adoy, 🌹<br />
+                                                    Happy Valentine's Day, Kamusta ikaw? I'm here ulet. I hope na hindi ka pa nakukulitan sa akin huhu, Alam mo ba na hindi ko alam kung pano ko hihigitan yung previous na ginawa ko para sayo huhu, gusto ko lang talaga na mapasaya ang isang Aila Medel kahit na simpleng bagay lang kaya ginagawa ko parin tong mga to, and I hope nagugustuhan mo po, kaya sana hayaan mo lang ako ha, na i pa feel sayo yung deserved mo, kahit walang kapalit gagawin ko parin naman to ng paulit-ulit hehe. Pero I just wanna say na super thankful ako na nakilala kita, alam ko na ang weird kasi hindi naman kita nakikita tsaka nakakasama diba? Pero hindi ko alam yun nararamdaman ko. Alam mo ba isa ka sa naging inspirasyon ko habang nasa thesis arc ako, kaya gusto ko rin talaga mag thankyou sayo adoyyy! Palagi kang kasama sa prayers ko at wish ko always na maging masaya ka lang palagi, kayo ni baby Aqui. Hoping din ako na someday magkita ulet tayo and syempre makita din si baby aqui hehe. So ayun lang, Sana nagustuhan mo to and sana napangiti kita kahit papano hehehe. Ingat palagi Adoyyyyy! 💗<br />
+                                                </div>
+                                                <div className="mt-4 flex items-center justify-between">
+                                                    <div className="text-[11px] font-bold text-slate-500">Sealed with love</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="pointer-events-none absolute inset-0" />
+                        </div>
                     </div>
-                    <div className="text-[11px] font-semibold text-slate-500">
-                      For you, with love 💗
-                    </div>
-                  </div>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => setEnvelopeOpen(false)}
-                  className="rounded-2xl border border-black/10 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
-                >
-                  Close
-                </button>
-              </div>
-
-              <div className="px-5 pb-5 pt-4">
-                <div className="rounded-[22px] border border-[var(--soft-border)] bg-white/80 p-4 sm:p-5">
-                  <div className="text-sm sm:text-[15px] font-semibold leading-relaxed text-slate-700">
-                    Hello Adoy, 🌹<br />
-                    Happy Valentine's Day, Kamusta ikaw? I'm here ulet. I hope na hindi ka pa nakukulitan sa akin huhu, Alam mo ba na hindi ko alam kung pano ko hihigitan yung previous na ginawa ko para sayo huhu, gusto ko lang talaga na mapasaya ang isang Aila Medel kahit na simpleng bagay lang kaya ginagawa ko parin tong mga to, and I hope nagugustuhan mo po, kaya sana hayaan mo lang ako ha, na i pa feel sayo yung deserved mo, kahit walang kapalit gagawin ko parin naman to ng paulit-ulit hehe. Pero I just wanna say na super thankful ako na nakilala kita, alam ko na ang weird kasi hindi naman kita nakikita tsaka nakakasama diba? Pero hindi ko alam yun nararamdaman ko. Alam mo ba isa ka sa naging inspirasyon ko habang nasa thesis arc ako, kaya gusto ko rin talaga mag thankyou sayo adoyyy! Palagi kang kasama sa prayers ko at wish ko always na maging masaya ka lang palagi, kayo ni baby Aqui. Hoping din ako na someday magkita ulet tayo and syempre makita din si baby aqui hehe. So ayun lang, Sana nagustuhan mo to and sana napangiti kita kahit papano hehehe. Ingat palagi Adoyyyyy! 💗<br />
-                  </div>
-                  <div className="mt-4 flex items-center justify-between">
-                    <div className="text-[11px] font-bold text-slate-500">
-                      Sealed with love
-                    </div>
-                    
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="pointer-events-none absolute inset-0" />
-      </div>
-    </div>
-  </div>
-)}
-
-
+            )}
         </section>
     );
 }
