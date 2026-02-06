@@ -612,7 +612,7 @@ export default function Hero() {
                                                       <img src={ENVELOPE_ICON} alt="Envelope" draggable="false" className="h-6 w-6 object-contain" />
                                                   </span>
                                                   <div className="min-w-0">
-                                                      <div className="text-sm font-extrabold text-slate-900">Special Valentine Message for ADOY</div>
+                                                      <div className="text-sm font-extrabold text-slate-900">Special Valentine's Message for ADOY</div>
                                                       <div className="text-[11px] font-semibold text-slate-500">For you, with love 💗</div>
                                                   </div>
                                               </div>
