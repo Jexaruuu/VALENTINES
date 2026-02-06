@@ -896,13 +896,15 @@ export default function Hero() {
             </div>
 
             {unlocked && (
-                <div className="pointer-events-none fixed inset-0 z-[70]">
+                <div className="pointer-events-none fixed inset-0 z-[9000]">
+
                     <canvas ref={confettiRef} className="h-full w-full" />
                 </div>
             )}
 
             {envelopeOpen && (
-                <div className="fixed inset-0 z-[80]" role="dialog" aria-modal="true" onMouseDown={() => setEnvelopeOpen(false)}>
+                <div className="fixed inset-0 z-[9999]" role="dialog" aria-modal="true" onMouseDown={() => setEnvelopeOpen(false)}>
+
                     <div className="absolute inset-0 bg-black/35 backdrop-blur-md" />
 
                     <div className="relative mx-auto grid min-h-dvh place-items-center px-4 py-6">
