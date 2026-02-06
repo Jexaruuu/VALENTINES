@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ThemeContext } from "../App";
 
 export default function Hero() {
@@ -12,7 +13,6 @@ export default function Hero() {
     const BADGE_ICON = isBlue ? BADGE_BLUE_ICON : BADGE_RED_ICON;
 
     const NEW_GAME_ICON = "/restart.png";
-
     const ENVELOPE_ICON = "/loveletter.gif";
 
     const PREV_ICON = "/prev.png";
@@ -191,10 +191,8 @@ export default function Hero() {
     useEffect(() => {
         if (!envelopeOpen) {
             setValentineOpen(false);
-
             localStorage.setItem("jex_read_open", "0");
             window.dispatchEvent(new Event("jex_read_close"));
-
             return;
         }
 
@@ -207,7 +205,6 @@ export default function Hero() {
         return () => {
             document.body.style.overflow = prevOverflow;
             setValentineOpen(false);
-
             localStorage.setItem("jex_read_open", "0");
             window.dispatchEvent(new Event("jex_read_close"));
         };
@@ -472,13 +469,8 @@ export default function Hero() {
         setCurrentTime(clamped);
     };
 
-    const nextTrack = () => {
-        setTrackIndex((i) => (i + 1) % TRACKS.length);
-    };
-
-    const prevTrack = () => {
-        setTrackIndex((i) => (i - 1 + TRACKS.length) % TRACKS.length);
-    };
+    const nextTrack = () => setTrackIndex((i) => (i + 1) % TRACKS.length);
+    const prevTrack = () => setTrackIndex((i) => (i - 1 + TRACKS.length) % TRACKS.length);
 
     useEffect(() => {
         const a = audioRef.current;
@@ -526,15 +518,14 @@ export default function Hero() {
         a.load();
 
         if (wasPlaying) {
-            const tryPlay = async () => {
+            (async () => {
                 try {
                     await a.play();
                     setPlaying(true);
                 } catch {
                     setPlaying(false);
                 }
-            };
-            tryPlay();
+            })();
         }
     }, [trackIndex, track?.src]);
 
@@ -542,456 +533,458 @@ export default function Hero() {
         setAudioVolume(volume);
     }, [volume]);
 
-    const labelAccent = isBlue ? "text-[var(--accent-text)]" : "text-[var(--accent-text)]";
+    const labelAccent = "text-[var(--accent-text)]";
     const rangeAccent = "accent-[var(--accent-solid)]";
     const primaryBtn = "bg-[var(--accent-solid)] text-white";
     const softBtn = "border border-[var(--soft-border)] bg-white/70 text-slate-700";
 
+    const canPortal = typeof document !== "undefined";
+
+    const confettiLayer =
+        unlocked && canPortal
+            ? createPortal(
+                  <div className="pointer-events-none fixed inset-0 z-[2147483646]">
+                      <canvas ref={confettiRef} className="h-full w-full" />
+                  </div>,
+                  document.body
+              )
+            : null;
+
+    const modalLayer =
+        envelopeOpen && canPortal
+            ? createPortal(
+                  <div
+                      className="fixed inset-0 z-[2147483647]"
+                      role="dialog"
+                      aria-modal="true"
+                      onMouseDown={() => setEnvelopeOpen(false)}
+                  >
+                      <div className="absolute inset-0 bg-black/35 backdrop-blur-md" />
+
+                      <div className="relative mx-auto grid min-h-dvh place-items-center px-4 py-6">
+                          <div className="relative w-full max-w-[1100px]" onMouseDown={(e) => e.stopPropagation()}>
+                              <div className="relative mx-auto flex w-full items-center justify-center">
+                                  <div
+                                      className={[
+                                          "relative flex items-center justify-center",
+                                          "transition-transform duration-700 ease-out will-change-transform",
+                                          valentineOpen ? "translate-x-0 lg:-translate-x-[220px]" : "translate-x-0",
+                                      ].join(" ")}
+                                  >
+                                      <button
+                                          type="button"
+                                          onClick={() => setValentineOpen(true)}
+                                          className={[
+                                              "group relative grid place-items-center",
+                                              "bg-transparent border-0 shadow-none",
+                                              "transition-all duration-500 ease-out will-change-transform",
+                                              "hover:-translate-y-0.5",
+                                              "active:translate-y-0 active:scale-[0.99]",
+                                              "focus:outline-none",
+                                          ].join(" ")}
+                                          aria-label="Open message"
+                                      >
+                                          <img
+                                              src="/jex2.png"
+                                              alt="Jex"
+                                              className={[
+                                                  "max-h-[72vh] w-auto select-none outline-none",
+                                                  "transition-transform duration-500 ease-out will-change-transform",
+                                              ].join(" ")}
+                                              draggable="false"
+                                          />
+                                      </button>
+                                  </div>
+
+                                  <div
+                                      className={[
+                                          "absolute left-1/2 top-1/2 -translate-y-1/2",
+                                          "w-[min(440px,92vw)]",
+                                          "transition-all duration-700 ease-out will-change-transform",
+                                          valentineOpen ? "opacity-100 translate-x-[100px] lg:translate-x-[20px]" : "opacity-0 translate-x-0 pointer-events-none",
+                                      ].join(" ")}
+                                      onMouseDown={(e) => e.stopPropagation()}
+                                  >
+                                      <div className="relative overflow-hidden rounded-[30px] border border-white/20 bg-white/90 shadow-[0_22px_80px_-60px_rgba(0,0,0,0.8)]">
+                                          <div className="flex items-center justify-between gap-3 border-b border-black/5 bg-white/70 px-5 py-4">
+                                              <div className="flex items-center gap-2">
+                                                  <span className="grid h-9 w-9 place-items-center overflow-hidden rounded-2xl border border-black/10 bg-white">
+                                                      <img src={ENVELOPE_ICON} alt="Envelope" draggable="false" className="h-6 w-6 object-contain" />
+                                                  </span>
+                                                  <div className="min-w-0">
+                                                      <div className="text-sm font-extrabold text-slate-900">Special Valentine Message for ADOY</div>
+                                                      <div className="text-[11px] font-semibold text-slate-500">For you, with love 💗</div>
+                                                  </div>
+                                              </div>
+
+                                              <button
+                                                  type="button"
+                                                  onClick={() => setEnvelopeOpen(false)}
+                                                  className="rounded-2xl border border-black/10 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+                                              >
+                                                  Close
+                                              </button>
+                                          </div>
+
+                                          <div className="px-5 pb-5 pt-4">
+                                              <div className="rounded-[22px] border border-[var(--soft-border)] bg-white/80 p-4 sm:p-5">
+                                                  <div className="text-sm sm:text-[15px] font-semibold leading-relaxed text-slate-700">
+                                                      Hello Adoy, 🌹<br />
+                                                      Happy Valentine's Day, Kamusta ikaw? I'm here ulet. I hope na hindi ka pa nakukulitan sa akin huhu, Alam mo ba na hindi ko alam kung pano ko hihigitan yung previous na ginawa ko para sayo huhu, gusto ko lang talaga na mapasaya ang isang Aila Medel kahit na simpleng bagay lang kaya ginagawa ko parin tong mga to, and I hope nagugustuhan mo po, kaya sana hayaan mo lang ako ha, na i pa feel sayo yung deserved mo, kahit walang kapalit gagawin ko parin naman to ng paulit-ulit hehe. Pero I just wanna say na super thankful ako na nakilala kita, alam ko na ang weird kasi hindi naman kita nakikita tsaka nakakasama diba? Pero hindi ko alam yun nararamdaman ko. Alam mo ba isa ka sa naging inspirasyon ko habang nasa thesis arc ako, kaya gusto ko rin talaga mag thankyou sayo adoyyy! Palagi kang kasama sa prayers ko at wish ko always na maging masaya ka lang palagi, kayo ni baby Aqui. Hoping din ako na someday magkita ulet tayo and syempre makita din si baby aqui hehe. So ayun lang, Sana nagustuhan mo to and sana napangiti kita kahit papano hehehe. Ingat palagi Adoyyyyy! 💗<br />
+                                                  </div>
+                                                  <div className="mt-4 flex items-center justify-between">
+                                                      <div className="text-[11px] font-bold text-slate-500">Sealed with love</div>
+                                                  </div>
+                                              </div>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </div>
+
+                              <div className="pointer-events-none absolute inset-0" />
+                          </div>
+                      </div>
+                  </div>,
+                  document.body
+              )
+            : null;
+
     return (
-        <section className="relative isolate overflow-hidden font-['Poppins'] -mb-px bg-[var(--bg-via)]">
-            <div className="mx-auto w-full max-w-300 px-3 sm:px-6 lg:px-10 py-6 sm:py-10">
-                <div className="relative overflow-hidden rounded-[30px] sm:rounded-[34px] border border-[var(--soft-border)] bg-[var(--panel)] shadow-[0_18px_50px_-38px_var(--shadow)] backdrop-blur-xl">
-                    <div className="pointer-events-none absolute inset-0 -z-10">
-                        <div className="absolute inset-x-0 top-0 hidden h-px bg-white/80" />
-                        <div className="absolute inset-x-0 bottom-0 h-px bg-[var(--line)]" />
-                    </div>
-
-                    <div className="relative grid gap-5 p-4 sm:p-7 lg:grid-cols-[1.15fr_0.85fr] lg:gap-7">
-                        <div className="rounded-[26px] sm:rounded-[28px] border border-[var(--soft-border)] bg-[var(--pill)] p-4 sm:p-6 shadow-[0_12px_26px_-22px_var(--shadow)] backdrop-blur">
-                            <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                    <div className="inline-flex items-center gap-2 rounded-full border border-[var(--soft-border)] bg-white/70 px-3 py-1 text-[11px] sm:text-xs font-semibold text-slate-700">
-                                        <span className="grid h-5 w-5 place-items-center overflow-hidden">
-                                            <img
-                                                src={BADGE_ICON}
-                                                alt={isBlue ? "Blue badge" : "Red badge"}
-                                                className="h-full w-full object-cover"
-                                                draggable="false"
-                                            />
-                                        </span>
-                                        Valentine’s Card Match
-                                    </div>
-
-                                    <div className="mt-4 text-xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-                                        Match the cute cards.
-                                    </div>
-                                    <div className="mt-1 text-[13px] sm:text-base font-semibold text-slate-600">
-                                        Match all the pairs to unlock a small Valentine message made especially for you. Enjoy ADOY! 💗
-                                    </div>
-                                </div>
-
-                                <button
-                                    onClick={resetGame}
-                                    className={[
-                                        "shrink-0 inline-flex items-center justify-center gap-2",
-                                        "rounded-3xl border border-[var(--soft-border)] bg-white/70 px-3 sm:px-4 py-2",
-                                        "text-[11px] sm:text-sm font-semibold text-slate-700",
-                                        "shadow-[0_12px_26px_-22px_var(--shadow)]",
-                                        "transition-all duration-200 ease-out",
-                                        "hover:-translate-y-0.5 hover:bg-white",
-                                        "active:translate-y-0",
-                                        "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-white/70",
-                                    ].join(" ")}
-                                >
-                                    <span className="grid h-4 w-4 sm:h-5 sm:w-5 place-items-center overflow-hidden">
-                                        <img src={NEW_GAME_ICON} alt="New game" className="h-full w-full object-cover" draggable="false" />
-                                    </span>
-                                    Restart Game
-                                </button>
-                            </div>
-
-                            <div className="mt-4 sm:mt-5 grid grid-cols-3 gap-2 sm:gap-3">
-                                <div className="rounded-3xl border border-[var(--soft-border)] bg-white/70 px-3 sm:px-4 py-3 shadow-sm">
-                                    <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500">Score</div>
-                                    <div className="mt-1 text-lg sm:text-2xl font-extrabold text-slate-900">{score}</div>
-                                </div>
-
-                                <div className="rounded-3xl border border-[var(--soft-border)] bg-white/70 px-3 sm:px-4 py-3 shadow-sm">
-                                    <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500">Moves</div>
-                                    <div className="mt-1 text-lg sm:text-2xl font-extrabold text-slate-900">{moves}</div>
-                                </div>
-
-                                <div className="rounded-3xl border border-[var(--soft-border)] bg-white/70 px-3 sm:px-4 py-3 shadow-sm">
-                                    <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500">Best</div>
-                                    <div className="mt-1 text-lg sm:text-2xl font-extrabold text-slate-900">{best}</div>
-                                </div>
-                            </div>
-
-                            <div className="mt-4 sm:mt-5">
-                                <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
-                                    <span>Reward progress</span>
-                                    <span className="text-[var(--accent-text)]">{unlocked ? "Unlocked" : "Locked"}</span>
-                                </div>
-                                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/70 ring-1 ring-[var(--soft-border)]">
-                                    <div
-                                        className="h-full rounded-full bg-[var(--accent-solid)] transition-[width] duration-500"
-                                        style={{ width: `${allMatched ? 100 : 0}%` }}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="mt-5 sm:mt-6 grid grid-cols-4 gap-2 sm:gap-3">
-                                {deck.map((card) => {
-                                    const isUp = card.faceUp || card.matched;
-                                    const glow = justMatchedKey && card.pairKey === justMatchedKey && card.matched;
-
-                                    return (
-                                        <button
-                                            key={card.id}
-                                            onClick={() => flipCard(card.id)}
-                                            disabled={lock || card.matched}
-                                            className={[
-                                                "group relative aspect-[3/4] overflow-hidden rounded-[18px] sm:rounded-[22px] border text-left",
-                                                "transition-all duration-200 ease-out active:scale-[0.99] select-none",
-                                                "shadow-[0_12px_26px_-22px_var(--shadow)]",
-                                                card.matched
-                                                    ? "border-[var(--soft-border)] bg-white/75"
-                                                    : "border-[var(--soft-border)] bg-white/60 hover:bg-white/80 hover:-translate-y-0.5",
-                                                glow ? "ring-2 ring-[var(--ring)]" : "",
-                                                "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-white/70",
-                                            ].join(" ")}
-                                        >
-                                            <div className="relative h-full w-full p-2.5 sm:p-3">
-                                                <div
-                                                    className={[
-                                                        "flex h-full w-full items-center justify-center rounded-[14px] sm:rounded-[18px]",
-                                                        "border border-[var(--soft-border)] bg-transparent",
-                                                        "transition-all duration-300",
-                                                        isUp ? "opacity-0 scale-[0.98]" : "opacity-100",
-                                                    ].join(" ")}
-                                                >
-                                                    <div className="grid place-items-center">
-                                                        <div className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center overflow-hidden rounded-2xl bg-transparent shadow-none">
-                                                            <img src={CARD_BACK_IMG} alt="Card back" className="h-full w-full object-contain" draggable="false" />
-                                                        </div>
-                                                        <div className="mt-2 text-[10px] sm:text-[11px] font-semibold tracking-wide text-slate-600">Tap</div>
-                                                    </div>
-                                                </div>
-
-                                                <div
-                                                    className={[
-                                                        "absolute inset-2.5 sm:inset-3 grid place-items-center rounded-[14px] sm:rounded-[18px]",
-                                                        "border border-[var(--soft-border)] bg-white/80",
-                                                        "transition-all duration-300",
-                                                        isUp ? "opacity-100 scale-100" : "opacity-0 scale-[0.98]",
-                                                    ].join(" ")}
-                                                >
-                                                    <div className="grid place-items-center gap-2">
-                                                        <div className="grid h-12 w-12 sm:h-16 sm:w-16 place-items-center rounded-2xl bg-white/80 border border-[var(--soft-border)] shadow-sm overflow-hidden">
-                                                            <img
-                                                                src={card.img}
-                                                                alt={card.label}
-                                                                className="h-9 w-9 sm:h-11 sm:w-11 object-contain drop-shadow"
-                                                                draggable={false}
-                                                            />
-                                                        </div>
-                                                        <div className="text-[10px] sm:text-xs font-semibold text-slate-700">{card.label}</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-
-                            <div className="mt-5 sm:mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                <div className="text-[13px] sm:text-sm font-semibold text-slate-700">
-                                    {allMatched ? (
-                                        <span className="text-[var(--accent-text)]">
-                                            All matched! Congratulations, you unlocked the special valentine message.
-                                        </span>
-                                    ) : (
-                                        <span>Match all pairs to unlock the special valentine message.</span>
-                                    )}
-                                </div>
-
-                                <button
-                                    onClick={() => unlocked && setEnvelopeOpen(true)}
-                                    disabled={!unlocked}
-                                    className={[
-                                        "relative inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-3xl px-5 py-3",
-                                        "text-sm font-semibold transition-all duration-200 ease-out",
-                                        "shadow-[0_12px_26px_-22px_var(--shadow)]",
-                                        "active:scale-[0.99]",
-                                        unlocked
-                                            ? "bg-[var(--accent-solid)] text-white hover:-translate-y-0.5 hover:brightness-95"
-                                            : "border border-[var(--soft-border)] bg-white/60 text-slate-400 cursor-not-allowed",
-                                        "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-white/70",
-                                    ].join(" ")}
-                                >
-                                    <span className="grid h-5 w-5 place-items-center overflow-hidden">
-                                        <img
-                                            src={ENVELOPE_ICON}
-                                            alt="Envelope"
-                                            draggable="false"
-                                            className="h-full w-full object-contain bg-transparent mix-blend-multiply"
-                                        />
-                                    </span>
-                                    <span>{unlocked ? "Read" : "Locked"}</span>
-                                </button>
-                            </div>
+        <>
+            <section className="relative isolate overflow-hidden font-['Poppins'] -mb-px bg-[var(--bg-via)]">
+                <div className="mx-auto w-full max-w-300 px-3 sm:px-6 lg:px-10 py-6 sm:py-10">
+                    <div className="relative overflow-hidden rounded-[30px] sm:rounded-[34px] border border-[var(--soft-border)] bg-[var(--panel)] shadow-[0_18px_50px_-38px_var(--shadow)] backdrop-blur-xl">
+                        <div className="pointer-events-none absolute inset-0 -z-10">
+                            <div className="absolute inset-x-0 top-0 hidden h-px bg-white/80" />
+                            <div className="absolute inset-x-0 bottom-0 h-px bg-[var(--line)]" />
                         </div>
 
-                        <div className="rounded-[26px] sm:rounded-[28px] border border-[var(--soft-border)] bg-[var(--pill)] p-4 sm:p-6 shadow-[0_12px_26px_-22px_var(--shadow)] backdrop-blur">
-                            <div className="mb-3 sm:mb-4">
-                                <div className={["text-lg sm:text-xl font-extrabold", labelAccent].join(" ")}>Music Player</div>
-                                <div className="mt-0.5 text-xs sm:text-sm font-semibold text-slate-600">Pick a song from the queue and enjoy the vibe.</div>
-                            </div>
-
-                            <div className="relative overflow-hidden rounded-[26px] sm:rounded-[28px] border border-[var(--soft-border)] bg-white/70 shadow-[0_12px_26px_-22px_var(--shadow)]">
-                                <div className="relative p-4 sm:p-5">
-                                    <audio ref={audioRef} preload="metadata" />
-
-                                    <div className="relative overflow-hidden rounded-[18px] sm:rounded-[20px] bg-black/90 aspect-square border border-white/10 shadow-sm">
-                                        <img src={track?.cover || BADGE_ICON} alt="Cover" className="absolute inset-0 h-full w-full object-cover" draggable="false" />
-                                        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/25 to-black/60" />
-                                    </div>
-
-                                    <div className="mt-4">
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="min-w-0">
-                                                <div className="truncate text-base sm:text-lg font-extrabold text-slate-900">{track?.title}</div>
-                                                <div className="truncate text-xs sm:text-sm font-semibold text-slate-600">{track?.artist}</div>
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-3">
-                                            <div className="mt-2 flex items-center justify-between text-[11px] font-semibold text-slate-600">
-                                                <span className="text-[var(--accent-text)]">{fmt(currentTime)}</span>
-                                                <span className="text-[var(--accent-text)]">{fmt(duration)}</span>
-                                            </div>
-
-                                            <input
-                                                type="range"
-                                                min={0}
-                                                max={Math.max(0, Math.floor(duration || 0))}
-                                                value={Math.floor(currentTime)}
-                                                onMouseDown={() => setSeeking(true)}
-                                                onTouchStart={() => setSeeking(true)}
-                                                onMouseUp={() => setSeeking(false)}
-                                                onTouchEnd={() => setSeeking(false)}
-                                                onChange={(e) => {
-                                                    const v = Number(e.target.value || 0);
-                                                    setCurrentTime(v);
-                                                    seekTo(v);
-                                                }}
-                                                className={["mt-1 w-full", rangeAccent].join(" ")}
-                                            />
-                                        </div>
-
-                                        <div className="mt-4 flex items-center justify-between gap-3">
-                                            <button
-                                                onClick={prevTrack}
-                                                className={[
-                                                    "grid h-10 w-10 place-items-center rounded-2xl",
-                                                    softBtn,
-                                                    "shadow-sm transition-all duration-200",
-                                                    "hover:-translate-y-0.5 hover:bg-white active:translate-y-0",
-                                                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-white/70",
-                                                ].join(" ")}
-                                                aria-label="Previous"
-                                            >
-                                                <span className="grid h-5 w-5 place-items-center overflow-hidden">
-                                                    <img src={PREV_ICON} alt="Previous" className="h-full w-full object-contain" draggable="false" />
-                                                </span>
-                                            </button>
-
-                                            <button
-                                                onClick={() => syncPlayState(!playing)}
-                                                className={[
-                                                    "grid h-12 w-12 place-items-center rounded-full",
-                                                    primaryBtn,
-                                                    "shadow-[0_18px_60px_-40px_var(--shadow)]",
-                                                    "transition-all duration-200 ease-out",
-                                                    "hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 active:scale-[0.99]",
-                                                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-white/70",
-                                                ].join(" ")}
-                                                aria-label={playing ? "Pause" : "Play"}
-                                            >
-                                                <span className="text-base">{playing ? "⏸" : "▶"}</span>
-                                            </button>
-
-                                            <button
-                                                onClick={nextTrack}
-                                                className={[
-                                                    "grid h-10 w-10 place-items-center rounded-2xl",
-                                                    softBtn,
-                                                    "shadow-sm transition-all duration-200",
-                                                    "hover:-translate-y-0.5 hover:bg-white active:translate-y-0",
-                                                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-white/70",
-                                                ].join(" ")}
-                                                aria-label="Next"
-                                            >
-                                                <span className="grid h-5 w-5 place-items-center overflow-hidden">
-                                                    <img src={NEXT_ICON} alt="Next" className="h-full w-full object-contain" draggable="false" />
-                                                </span>
-                                            </button>
-                                        </div>
-
-                                        <div className="mt-4 flex items-center justify-start gap-3">
+                        <div className="relative grid gap-5 p-4 sm:p-7 lg:grid-cols-[1.15fr_0.85fr] lg:gap-7">
+                            <div className="rounded-[26px] sm:rounded-[28px] border border-[var(--soft-border)] bg-[var(--pill)] p-4 sm:p-6 shadow-[0_12px_26px_-22px_var(--shadow)] backdrop-blur">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                        <div className="inline-flex items-center gap-2 rounded-full border border-[var(--soft-border)] bg-white/70 px-3 py-1 text-[11px] sm:text-xs font-semibold text-slate-700">
                                             <span className="grid h-5 w-5 place-items-center overflow-hidden">
-                                                <img src={VOLUME_ICON} alt="Volume" className="h-full w-full object-contain" draggable="false" />
+                                                <img
+                                                    src={BADGE_ICON}
+                                                    alt={isBlue ? "Blue badge" : "Red badge"}
+                                                    className="h-full w-full object-cover"
+                                                    draggable="false"
+                                                />
                                             </span>
+                                            Valentine’s Card Match
+                                        </div>
 
-                                            <input
-                                                type="range"
-                                                min={0}
-                                                max={100}
-                                                value={Math.round(volume * 100)}
-                                                onChange={(e) => setVolume(Math.max(0, Math.min(1, Number(e.target.value) / 100)))}
-                                                className={["flex-1", rangeAccent].join(" ")}
-                                            />
+                                        <div className="mt-4 text-xl sm:text-3xl font-extrabold tracking-tight text-slate-900">Match the cute cards.</div>
+                                        <div className="mt-1 text-[13px] sm:text-base font-semibold text-slate-600">
+                                            Match all the pairs to unlock a small Valentine message made especially for you. Enjoy ADOY! 💗
                                         </div>
                                     </div>
-                                </div>
-                            </div>
 
-                            <div className="mt-4 rounded-3xl border border-[var(--soft-border)] bg-white/70 p-3 sm:p-4 shadow-sm">
-                                <div className="flex items-center justify-between">
-                                    <div className={["text-xs font-semibold", labelAccent].join(" ")}>Queue</div>
-                                    <div className="text-xs font-semibold text-slate-600">
-                                        <span className="text-[var(--accent-text)]">{trackIndex + 1}</span>/{TRACKS.length}
+                                    <button
+                                        onClick={resetGame}
+                                        className={[
+                                            "shrink-0 inline-flex items-center justify-center gap-2",
+                                            "rounded-3xl border border-[var(--soft-border)] bg-white/70 px-3 sm:px-4 py-2",
+                                            "text-[11px] sm:text-sm font-semibold text-slate-700",
+                                            "shadow-[0_12px_26px_-22px_var(--shadow)]",
+                                            "transition-all duration-200 ease-out",
+                                            "hover:-translate-y-0.5 hover:bg-white",
+                                            "active:translate-y-0",
+                                            "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-white/70",
+                                        ].join(" ")}
+                                    >
+                                        <span className="grid h-4 w-4 sm:h-5 sm:w-5 place-items-center overflow-hidden">
+                                            <img src={NEW_GAME_ICON} alt="New game" className="h-full w-full object-cover" draggable="false" />
+                                        </span>
+                                        Restart Game
+                                    </button>
+                                </div>
+
+                                <div className="mt-4 sm:mt-5 grid grid-cols-3 gap-2 sm:gap-3">
+                                    <div className="rounded-3xl border border-[var(--soft-border)] bg-white/70 px-3 sm:px-4 py-3 shadow-sm">
+                                        <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500">Score</div>
+                                        <div className="mt-1 text-lg sm:text-2xl font-extrabold text-slate-900">{score}</div>
+                                    </div>
+
+                                    <div className="rounded-3xl border border-[var(--soft-border)] bg-white/70 px-3 sm:px-4 py-3 shadow-sm">
+                                        <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500">Moves</div>
+                                        <div className="mt-1 text-lg sm:text-2xl font-extrabold text-slate-900">{moves}</div>
+                                    </div>
+
+                                    <div className="rounded-3xl border border-[var(--soft-border)] bg-white/70 px-3 sm:px-4 py-3 shadow-sm">
+                                        <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500">Best</div>
+                                        <div className="mt-1 text-lg sm:text-2xl font-extrabold text-slate-900">{best}</div>
                                     </div>
                                 </div>
 
-                                <div className="mt-3 grid gap-2">
-                                    {TRACKS.map((t, idx) => {
-                                        const active = idx === trackIndex;
+                                <div className="mt-4 sm:mt-5">
+                                    <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
+                                        <span>Reward progress</span>
+                                        <span className="text-[var(--accent-text)]">{unlocked ? "Unlocked" : "Locked"}</span>
+                                    </div>
+                                    <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/70 ring-1 ring-[var(--soft-border)]">
+                                        <div
+                                            className="h-full rounded-full bg-[var(--accent-solid)] transition-[width] duration-500"
+                                            style={{ width: `${allMatched ? 100 : 0}%` }}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="mt-5 sm:mt-6 grid grid-cols-4 gap-2 sm:gap-3">
+                                    {deck.map((card) => {
+                                        const isUp = card.faceUp || card.matched;
+                                        const glow = justMatchedKey && card.pairKey === justMatchedKey && card.matched;
+
                                         return (
                                             <button
-                                                key={t.id}
-                                                onClick={() => setTrackIndex(idx)}
+                                                key={card.id}
+                                                onClick={() => flipCard(card.id)}
+                                                disabled={lock || card.matched}
                                                 className={[
-                                                    "flex w-full items-center gap-3 rounded-3xl border px-3 py-2 text-left",
-                                                    "transition-all duration-200 ease-out",
-                                                    active
-                                                        ? "border-[var(--soft-border)] bg-white/85 shadow-sm"
+                                                    "group relative aspect-[3/4] overflow-hidden rounded-[18px] sm:rounded-[22px] border text-left",
+                                                    "transition-all duration-200 ease-out active:scale-[0.99] select-none",
+                                                    "shadow-[0_12px_26px_-22px_var(--shadow)]",
+                                                    card.matched
+                                                        ? "border-[var(--soft-border)] bg-white/75"
                                                         : "border-[var(--soft-border)] bg-white/60 hover:bg-white/80 hover:-translate-y-0.5",
+                                                    glow ? "ring-2 ring-[var(--ring)]" : "",
                                                     "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-white/70",
                                                 ].join(" ")}
                                             >
-                                                <div className="relative h-10 w-10 overflow-hidden rounded-2xl border border-[var(--soft-border)] bg-white/80">
-                                                    <img src={t.cover || BADGE_ICON} alt={t.title} className="h-full w-full object-cover" draggable="false" />
-                                                </div>
-                                                <div className="min-w-0 flex-1">
-                                                    <div className="truncate text-sm font-extrabold text-slate-900">{t.title}</div>
-                                                    <div className="truncate text-xs font-semibold text-slate-600">{t.artist}</div>
-                                                </div>
-                                                <div
-                                                    className={[
-                                                        "shrink-0 rounded-2xl px-3 py-1 text-[11px] font-semibold",
-                                                        active ? "bg-[var(--accent-solid)] text-white" : "border border-[var(--soft-border)] bg-white/70 text-slate-700",
-                                                    ].join(" ")}
-                                                >
-                                                    {active ? "Playing" : "Play"}
+                                                <div className="relative h-full w-full p-2.5 sm:p-3">
+                                                    <div
+                                                        className={[
+                                                            "flex h-full w-full items-center justify-center rounded-[14px] sm:rounded-[18px]",
+                                                            "border border-[var(--soft-border)] bg-transparent",
+                                                            "transition-all duration-300",
+                                                            isUp ? "opacity-0 scale-[0.98]" : "opacity-100",
+                                                        ].join(" ")}
+                                                    >
+                                                        <div className="grid place-items-center">
+                                                            <div className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center overflow-hidden rounded-2xl bg-transparent shadow-none">
+                                                                <img src={CARD_BACK_IMG} alt="Card back" className="h-full w-full object-contain" draggable="false" />
+                                                            </div>
+                                                            <div className="mt-2 text-[10px] sm:text-[11px] font-semibold tracking-wide text-slate-600">Tap</div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div
+                                                        className={[
+                                                            "absolute inset-2.5 sm:inset-3 grid place-items-center rounded-[14px] sm:rounded-[18px]",
+                                                            "border border-[var(--soft-border)] bg-white/80",
+                                                            "transition-all duration-300",
+                                                            isUp ? "opacity-100 scale-100" : "opacity-0 scale-[0.98]",
+                                                        ].join(" ")}
+                                                    >
+                                                        <div className="grid place-items-center gap-2">
+                                                            <div className="grid h-12 w-12 sm:h-16 sm:w-16 place-items-center rounded-2xl bg-white/80 border border-[var(--soft-border)] shadow-sm overflow-hidden">
+                                                                <img src={card.img} alt={card.label} className="h-9 w-9 sm:h-11 sm:w-11 object-contain drop-shadow" draggable={false} />
+                                                            </div>
+                                                            <div className="text-[10px] sm:text-xs font-semibold text-slate-700">{card.label}</div>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </button>
                                         );
                                     })}
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            {unlocked && (
-                <div className="pointer-events-none fixed inset-0 z-[9000]">
+                                <div className="mt-5 sm:mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                    <div className="text-[13px] sm:text-sm font-semibold text-slate-700">
+                                        {allMatched ? (
+                                            <span className="text-[var(--accent-text)]">All matched! Congratulations, you unlocked the special valentine message.</span>
+                                        ) : (
+                                            <span>Match all pairs to unlock the special valentine message.</span>
+                                        )}
+                                    </div>
 
-                    <canvas ref={confettiRef} className="h-full w-full" />
-                </div>
-            )}
-
-            {envelopeOpen && (
-                <div className="fixed inset-0 z-[9999]" role="dialog" aria-modal="true" onMouseDown={() => setEnvelopeOpen(false)}>
-
-                    <div className="absolute inset-0 bg-black/35 backdrop-blur-md" />
-
-                    <div className="relative mx-auto grid min-h-dvh place-items-center px-4 py-6">
-                        <div className="relative w-full max-w-[1100px]" onMouseDown={(e) => e.stopPropagation()}>
-                            <div className="relative mx-auto flex w-full items-center justify-center">
-                                <div
-                                    className={[
-                                        "relative flex items-center justify-center",
-                                        "transition-transform duration-700 ease-out will-change-transform",
-                                        valentineOpen ? "translate-x-0 lg:-translate-x-[220px]" : "translate-x-0",
-                                    ].join(" ")}
-                                >
                                     <button
-                                        type="button"
-                                        onClick={() => setValentineOpen(true)}
+                                        onClick={() => unlocked && setEnvelopeOpen(true)}
+                                        disabled={!unlocked}
                                         className={[
-                                            "group relative grid place-items-center",
-                                            "bg-transparent border-0 shadow-none",
-                                            "transition-all duration-500 ease-out will-change-transform",
-                                            "hover:-translate-y-0.5",
-                                            "active:translate-y-0 active:scale-[0.99]",
-                                            "focus:outline-none",
+                                            "relative inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-3xl px-5 py-3",
+                                            "text-sm font-semibold transition-all duration-200 ease-out",
+                                            "shadow-[0_12px_26px_-22px_var(--shadow)]",
+                                            "active:scale-[0.99]",
+                                            unlocked
+                                                ? "bg-[var(--accent-solid)] text-white hover:-translate-y-0.5 hover:brightness-95"
+                                                : "border border-[var(--soft-border)] bg-white/60 text-slate-400 cursor-not-allowed",
+                                            "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-white/70",
                                         ].join(" ")}
-                                        aria-label="Open message"
                                     >
-                                        <img
-                                            src="/jex2.png"
-                                            alt="Jex"
-                                            className={[
-                                                "max-h-[72vh] w-auto select-none outline-none",
-                                                "transition-transform duration-500 ease-out will-change-transform",
-                                            ].join(" ")}
-                                            draggable="false"
-                                        />
+                                        <span className="grid h-5 w-5 place-items-center overflow-hidden">
+                                            <img src={ENVELOPE_ICON} alt="Envelope" draggable="false" className="h-full w-full object-contain bg-transparent mix-blend-multiply" />
+                                        </span>
+                                        <span>{unlocked ? "Read" : "Locked"}</span>
                                     </button>
                                 </div>
+                            </div>
 
-                                <div
-                                    className={[
-                                        "absolute left-1/2 top-1/2 -translate-y-1/2",
-                                        "w-[min(440px,92vw)]",
-                                        "transition-all duration-700 ease-out will-change-transform",
-                                        valentineOpen ? "opacity-100 translate-x-[100px] lg:translate-x-[20px]" : "opacity-0 translate-x-0 pointer-events-none",
-                                    ].join(" ")}
-                                    onMouseDown={(e) => e.stopPropagation()}
-                                >
-                                    <div className="relative overflow-hidden rounded-[30px] border border-white/20 bg-white/90 shadow-[0_22px_80px_-60px_rgba(0,0,0,0.8)]">
-                                        <div className="flex items-center justify-between gap-3 border-b border-black/5 bg-white/70 px-5 py-4">
-                                            <div className="flex items-center gap-2">
-                                                <span className="grid h-9 w-9 place-items-center overflow-hidden rounded-2xl border border-black/10 bg-white">
-                                                    <img src={ENVELOPE_ICON} alt="Envelope" draggable="false" className="h-6 w-6 object-contain" />
-                                                </span>
+                            <div className="rounded-[26px] sm:rounded-[28px] border border-[var(--soft-border)] bg-[var(--pill)] p-4 sm:p-6 shadow-[0_12px_26px_-22px_var(--shadow)] backdrop-blur">
+                                <div className="mb-3 sm:mb-4">
+                                    <div className={["text-lg sm:text-xl font-extrabold", labelAccent].join(" ")}>Music Player</div>
+                                    <div className="mt-0.5 text-xs sm:text-sm font-semibold text-slate-600">Pick a song from the queue and enjoy the vibe.</div>
+                                </div>
+
+                                <div className="relative overflow-hidden rounded-[26px] sm:rounded-[28px] border border-[var(--soft-border)] bg-white/70 shadow-[0_12px_26px_-22px_var(--shadow)]">
+                                    <div className="relative p-4 sm:p-5">
+                                        <audio ref={audioRef} preload="metadata" />
+
+                                        <div className="relative overflow-hidden rounded-[18px] sm:rounded-[20px] bg-black/90 aspect-square border border-white/10 shadow-sm">
+                                            <img src={track?.cover || BADGE_ICON} alt="Cover" className="absolute inset-0 h-full w-full object-cover" draggable="false" />
+                                            <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/25 to-black/60" />
+                                        </div>
+
+                                        <div className="mt-4">
+                                            <div className="flex items-start justify-between gap-3">
                                                 <div className="min-w-0">
-                                                    <div className="text-sm font-extrabold text-slate-900">Special Valentine Message for ADOY</div>
-                                                    <div className="text-[11px] font-semibold text-slate-500">For you, with love 💗</div>
+                                                    <div className="truncate text-base sm:text-lg font-extrabold text-slate-900">{track?.title}</div>
+                                                    <div className="truncate text-xs sm:text-sm font-semibold text-slate-600">{track?.artist}</div>
                                                 </div>
                                             </div>
 
-                                            <button
-                                                type="button"
-                                                onClick={() => setEnvelopeOpen(false)}
-                                                className="rounded-2xl border border-black/10 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
-                                            >
-                                                Close
-                                            </button>
-                                        </div>
+                                            <div className="mt-3">
+                                                <div className="mt-2 flex items-center justify-between text-[11px] font-semibold text-slate-600">
+                                                    <span className="text-[var(--accent-text)]">{fmt(currentTime)}</span>
+                                                    <span className="text-[var(--accent-text)]">{fmt(duration)}</span>
+                                                </div>
 
-                                        <div className="px-5 pb-5 pt-4">
-                                            <div className="rounded-[22px] border border-[var(--soft-border)] bg-white/80 p-4 sm:p-5">
-                                                <div className="text-sm sm:text-[15px] font-semibold leading-relaxed text-slate-700">
-                                                    Hello Adoy, 🌹<br />
-                                                    Happy Valentine's Day, Kamusta ikaw? I'm here ulet. I hope na hindi ka pa nakukulitan sa akin huhu, Alam mo ba na hindi ko alam kung pano ko hihigitan yung previous na ginawa ko para sayo huhu, gusto ko lang talaga na mapasaya ang isang Aila Medel kahit na simpleng bagay lang kaya ginagawa ko parin tong mga to, and I hope nagugustuhan mo po, kaya sana hayaan mo lang ako ha, na i pa feel sayo yung deserved mo, kahit walang kapalit gagawin ko parin naman to ng paulit-ulit hehe. Pero I just wanna say na super thankful ako na nakilala kita, alam ko na ang weird kasi hindi naman kita nakikita tsaka nakakasama diba? Pero hindi ko alam yun nararamdaman ko. Alam mo ba isa ka sa naging inspirasyon ko habang nasa thesis arc ako, kaya gusto ko rin talaga mag thankyou sayo adoyyy! Palagi kang kasama sa prayers ko at wish ko always na maging masaya ka lang palagi, kayo ni baby Aqui. Hoping din ako na someday magkita ulet tayo and syempre makita din si baby aqui hehe. So ayun lang, Sana nagustuhan mo to and sana napangiti kita kahit papano hehehe. Ingat palagi Adoyyyyy! 💗<br />
-                                                </div>
-                                                <div className="mt-4 flex items-center justify-between">
-                                                    <div className="text-[11px] font-bold text-slate-500">Sealed with love</div>
-                                                </div>
+                                                <input
+                                                    type="range"
+                                                    min={0}
+                                                    max={Math.max(0, Math.floor(duration || 0))}
+                                                    value={Math.floor(currentTime)}
+                                                    onMouseDown={() => setSeeking(true)}
+                                                    onTouchStart={() => setSeeking(true)}
+                                                    onMouseUp={() => setSeeking(false)}
+                                                    onTouchEnd={() => setSeeking(false)}
+                                                    onChange={(e) => {
+                                                        const v = Number(e.target.value || 0);
+                                                        setCurrentTime(v);
+                                                        seekTo(v);
+                                                    }}
+                                                    className={["mt-1 w-full", rangeAccent].join(" ")}
+                                                />
+                                            </div>
+
+                                            <div className="mt-4 flex items-center justify-between gap-3">
+                                                <button
+                                                    onClick={prevTrack}
+                                                    className={[
+                                                        "grid h-10 w-10 place-items-center rounded-2xl",
+                                                        softBtn,
+                                                        "shadow-sm transition-all duration-200",
+                                                        "hover:-translate-y-0.5 hover:bg-white active:translate-y-0",
+                                                        "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-white/70",
+                                                    ].join(" ")}
+                                                    aria-label="Previous"
+                                                >
+                                                    <span className="grid h-5 w-5 place-items-center overflow-hidden">
+                                                        <img src={PREV_ICON} alt="Previous" className="h-full w-full object-contain" draggable="false" />
+                                                    </span>
+                                                </button>
+
+                                                <button
+                                                    onClick={() => syncPlayState(!playing)}
+                                                    className={[
+                                                        "grid h-12 w-12 place-items-center rounded-full",
+                                                        primaryBtn,
+                                                        "shadow-[0_18px_60px_-40px_var(--shadow)]",
+                                                        "transition-all duration-200 ease-out",
+                                                        "hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 active:scale-[0.99]",
+                                                        "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-white/70",
+                                                    ].join(" ")}
+                                                    aria-label={playing ? "Pause" : "Play"}
+                                                >
+                                                    <span className="text-base">{playing ? "⏸" : "▶"}</span>
+                                                </button>
+
+                                                <button
+                                                    onClick={nextTrack}
+                                                    className={[
+                                                        "grid h-10 w-10 place-items-center rounded-2xl",
+                                                        softBtn,
+                                                        "shadow-sm transition-all duration-200",
+                                                        "hover:-translate-y-0.5 hover:bg-white active:translate-y-0",
+                                                        "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-white/70",
+                                                    ].join(" ")}
+                                                    aria-label="Next"
+                                                >
+                                                    <span className="grid h-5 w-5 place-items-center overflow-hidden">
+                                                        <img src={NEXT_ICON} alt="Next" className="h-full w-full object-contain" draggable="false" />
+                                                    </span>
+                                                </button>
+                                            </div>
+
+                                            <div className="mt-4 flex items-center justify-start gap-3">
+                                                <span className="grid h-5 w-5 place-items-center overflow-hidden">
+                                                    <img src={VOLUME_ICON} alt="Volume" className="h-full w-full object-contain" draggable="false" />
+                                                </span>
+
+                                                <input
+                                                    type="range"
+                                                    min={0}
+                                                    max={100}
+                                                    value={Math.round(volume * 100)}
+                                                    onChange={(e) => setVolume(Math.max(0, Math.min(1, Number(e.target.value) / 100)))}
+                                                    className={["flex-1", rangeAccent].join(" ")}
+                                                />
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div className="pointer-events-none absolute inset-0" />
+                                <div className="mt-4 rounded-3xl border border-[var(--soft-border)] bg-white/70 p-3 sm:p-4 shadow-sm">
+                                    <div className="flex items-center justify-between">
+                                        <div className={["text-xs font-semibold", labelAccent].join(" ")}>Queue</div>
+                                        <div className="text-xs font-semibold text-slate-600">
+                                            <span className="text-[var(--accent-text)]">{trackIndex + 1}</span>/{TRACKS.length}
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-3 grid gap-2">
+                                        {TRACKS.map((t, idx) => {
+                                            const active = idx === trackIndex;
+                                            return (
+                                                <button
+                                                    key={t.id}
+                                                    onClick={() => setTrackIndex(idx)}
+                                                    className={[
+                                                        "flex w-full items-center gap-3 rounded-3xl border px-3 py-2 text-left",
+                                                        "transition-all duration-200 ease-out",
+                                                        active ? "border-[var(--soft-border)] bg-white/85 shadow-sm" : "border-[var(--soft-border)] bg-white/60 hover:bg-white/80 hover:-translate-y-0.5",
+                                                        "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-white/70",
+                                                    ].join(" ")}
+                                                >
+                                                    <div className="relative h-10 w-10 overflow-hidden rounded-2xl border border-[var(--soft-border)] bg-white/80">
+                                                        <img src={t.cover || BADGE_ICON} alt={t.title} className="h-full w-full object-cover" draggable="false" />
+                                                    </div>
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="truncate text-sm font-extrabold text-slate-900">{t.title}</div>
+                                                        <div className="truncate text-xs font-semibold text-slate-600">{t.artist}</div>
+                                                    </div>
+                                                    <div
+                                                        className={[
+                                                            "shrink-0 rounded-2xl px-3 py-1 text-[11px] font-semibold",
+                                                            active ? "bg-[var(--accent-solid)] text-white" : "border border-[var(--soft-border)] bg-white/70 text-slate-700",
+                                                        ].join(" ")}
+                                                    >
+                                                        {active ? "Playing" : "Play"}
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            )}
-        </section>
+            </section>
+
+            {confettiLayer}
+            {modalLayer}
+        </>
     );
 }
