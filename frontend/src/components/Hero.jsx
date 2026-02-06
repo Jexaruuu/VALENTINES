@@ -195,16 +195,11 @@ export default function Hero() {
             localStorage.setItem("jex_read_open", "0");
             window.dispatchEvent(new Event("jex_read_close"));
 
-            localStorage.removeItem("jex_overlay_open");
-            window.dispatchEvent(new Event("jex_overlay_close"));
             return;
         }
 
         localStorage.setItem("jex_read_open", "1");
         window.dispatchEvent(new Event("jex_read_open"));
-
-        localStorage.setItem("jex_overlay_open", "1");
-        window.dispatchEvent(new Event("jex_overlay_open"));
 
         const prevOverflow = document.body.style.overflow;
         document.body.style.overflow = "hidden";
@@ -215,9 +210,6 @@ export default function Hero() {
 
             localStorage.setItem("jex_read_open", "0");
             window.dispatchEvent(new Event("jex_read_close"));
-
-            localStorage.removeItem("jex_overlay_open");
-            window.dispatchEvent(new Event("jex_overlay_close"));
         };
     }, [envelopeOpen]);
 
@@ -286,7 +278,9 @@ export default function Hero() {
         const isMatch = a.pairKey === b.pairKey;
 
         if (isMatch) {
-            setDeck((prev) => prev.map((c) => (c.id === a.id || c.id === b.id ? { ...c, matched: true, faceUp: true } : c)));
+            setDeck((prev) =>
+                prev.map((c) => (c.id === a.id || c.id === b.id ? { ...c, matched: true, faceUp: true } : c))
+            );
             setScore((s) => s + 1);
             setJustMatchedKey(a.pairKey);
 
@@ -670,9 +664,7 @@ export default function Hero() {
                                                         <div className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center overflow-hidden rounded-2xl bg-transparent shadow-none">
                                                             <img src={CARD_BACK_IMG} alt="Card back" className="h-full w-full object-contain" draggable="false" />
                                                         </div>
-                                                        <div className="mt-2 text-[10px] sm:text-[11px] font-semibold tracking-wide text-slate-600">
-                                                            Tap
-                                                        </div>
+                                                        <div className="mt-2 text-[10px] sm:text-[11px] font-semibold tracking-wide text-slate-600">Tap</div>
                                                     </div>
                                                 </div>
 
@@ -743,9 +735,7 @@ export default function Hero() {
                         <div className="rounded-[26px] sm:rounded-[28px] border border-[var(--soft-border)] bg-[var(--pill)] p-4 sm:p-6 shadow-[0_12px_26px_-22px_var(--shadow)] backdrop-blur">
                             <div className="mb-3 sm:mb-4">
                                 <div className={["text-lg sm:text-xl font-extrabold", labelAccent].join(" ")}>Music Player</div>
-                                <div className="mt-0.5 text-xs sm:text-sm font-semibold text-slate-600">
-                                    Pick a song from the queue and enjoy the vibe.
-                                </div>
+                                <div className="mt-0.5 text-xs sm:text-sm font-semibold text-slate-600">Pick a song from the queue and enjoy the vibe.</div>
                             </div>
 
                             <div className="relative overflow-hidden rounded-[26px] sm:rounded-[28px] border border-[var(--soft-border)] bg-white/70 shadow-[0_12px_26px_-22px_var(--shadow)]">
@@ -753,12 +743,7 @@ export default function Hero() {
                                     <audio ref={audioRef} preload="metadata" />
 
                                     <div className="relative overflow-hidden rounded-[18px] sm:rounded-[20px] bg-black/90 aspect-square border border-white/10 shadow-sm">
-                                        <img
-                                            src={track?.cover || BADGE_ICON}
-                                            alt="Cover"
-                                            className="absolute inset-0 h-full w-full object-cover"
-                                            draggable="false"
-                                        />
+                                        <img src={track?.cover || BADGE_ICON} alt="Cover" className="absolute inset-0 h-full w-full object-cover" draggable="false" />
                                         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/25 to-black/60" />
                                     </div>
 
@@ -968,17 +953,10 @@ export default function Hero() {
                                         <div className="flex items-center justify-between gap-3 border-b border-black/5 bg-white/70 px-5 py-4">
                                             <div className="flex items-center gap-2">
                                                 <span className="grid h-9 w-9 place-items-center overflow-hidden rounded-2xl border border-black/10 bg-white">
-                                                    <img
-                                                        src={ENVELOPE_ICON}
-                                                        alt="Envelope"
-                                                        draggable="false"
-                                                        className="h-6 w-6 object-contain"
-                                                    />
+                                                    <img src={ENVELOPE_ICON} alt="Envelope" draggable="false" className="h-6 w-6 object-contain" />
                                                 </span>
                                                 <div className="min-w-0">
-                                                    <div className="text-sm font-extrabold text-slate-900">
-                                                        Special Valentine Message for ADOY
-                                                    </div>
+                                                    <div className="text-sm font-extrabold text-slate-900">Special Valentine Message for ADOY</div>
                                                     <div className="text-[11px] font-semibold text-slate-500">For you, with love 💗</div>
                                                 </div>
                                             </div>
