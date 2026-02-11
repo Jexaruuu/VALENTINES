@@ -247,7 +247,7 @@ export default function Navigation() {
     const yesMessage = useMemo(
         () => ({
             title: "Thankyou so much! Adoy.",
-            body: "Alam ko naman na malayo ka, so aayain na lang kita mag laro ng ml, roblox, or any. Kung hindi lang ikaw busy po. Yun lang po adooyyy! Thankyouuuuu :)",
+            body: "Hi Adoy/Yoda/Aila, Hindi ko alam na sa lahat ng ginawa ko ay dito ako kinilig haha, Dami ko rin kasi talagang galaw eh, galawgaw hahaaha, So ayun I just wanted to say na sobrang saya ko na naging kaibigan kita kahit na sobrang layo natin sa isat isa. Gusto ko sana i take yung opportunity na to para ayain kang lumabas, actually nakapag book na ko eh, pero syempre joke lang po hehe. Dahil nga sobrang layo mo, aayain na lang kitang mag laro kasama ka, kahit anong laro basta kasama ka. Yun ay kung hindi naman ikaw busy okay po? Always kayo mag iingat adoy ha. Wag masyado mag pa stress sa work mo, wag kalimutang kumain kahit konti lang, and dapat always stay hydrated oki? Sobrang madaming thankyouu, hindi ako magsasawang mag thankyou hehe. Wag ikaw mag cry ha, gusto ko naka smile ikaw while reading all of this na kaartehan ko sa buhay hahaha. thankyouuuuu adoooy! see yaaa :)",
         }),
         []
     );
@@ -266,6 +266,8 @@ export default function Navigation() {
 
     const showNoButton = choice !== "yes" && !(choice === "no" && noStep >= 5);
 
+    const showYesButton = choice !== "yes";
+
     const noLabel = noLabels[Math.min(noStep, noLabels.length - 1)];
 
     const onYes = () => {
@@ -281,7 +283,7 @@ export default function Navigation() {
     const GALLERY_PHOTOS = useMemo(
         () => [
             {
-                src: "/us1.png",
+                src: "/meandu1.png",
                 alt: "Us 1",
                 rot: "-rotate-2",
                 tape: "left-6 -top-3 rotate-[-10deg]",
@@ -289,15 +291,15 @@ export default function Navigation() {
                 message: "just having fun together",
             },
             {
-                src: "/us2.png",
+                src: "/yodaandme.png",
                 alt: "Us 2",
                 rot: "rotate-1",
                 tape: "right-8 -top-3 rotate-[12deg]",
-                title: "Late nights & laughs",
+                title: "Treasured moments",
                 message: "the kind that stays with me",
             },
             {
-                src: "/us3.png",
+                src: "/yoda3.png",
                 alt: "Us 3",
                 rot: "-rotate-1",
                 tape: "left-10 -top-3 rotate-[8deg]",
@@ -305,7 +307,7 @@ export default function Navigation() {
                 message: "always you, always",
             },
             {
-                src: "/us4.png",
+                src: "/meandu.png",
                 alt: "Us 4",
                 rot: "rotate-2",
                 tape: "right-10 -top-3 rotate-[-8deg]",
@@ -313,15 +315,15 @@ export default function Navigation() {
                 message: "that felt like everything",
             },
             {
-                src: "/us5.png",
+                src: "/meandu2.png",
                 alt: "Us 5",
                 rot: "-rotate-2",
                 tape: "left-7 -top-3 rotate-[14deg]",
-                title: "Us being us",
+                title: "Cherished memories",
                 message: "no filters, just love",
             },
             {
-                src: "/us6.png",
+                src: "/6.png",
                 alt: "Us 6",
                 rot: "rotate-1",
                 tape: "right-6 -top-3 rotate-[-12deg]",
@@ -529,26 +531,28 @@ export default function Navigation() {
                             <div className={isYes ? "flex justify-center" : ""}>
                                 <div className={isYes ? "w-full max-w-[360px]" : ""}>
                                     <div className={isYes ? "" : "grid grid-cols-2 gap-2 sm:gap-3"}>
-                                        <button
-                                            type="button"
-                                            onClick={onYes}
-                                            className={[
-                                                "group relative overflow-hidden",
-                                                "inline-flex items-center justify-center gap-2",
-                                                "rounded-3xl px-6 py-3 text-sm sm:text-base font-extrabold",
-                                                "text-slate-900 bg-white",
-                                                "shadow-[0_22px_55px_-40px_rgba(0,0,0,0.8)]",
-                                                "transition-all duration-200 ease-out",
-                                                "hover:-translate-y-0.5 active:translate-y-0",
-                                                "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
-                                                isYes ? "w-full" : "",
-                                            ].join(" ")}
-                                        >
-                                            <span className="relative h-5 w-5">
-                                                <img src={YES_ICON} alt="Yes" className="h-full w-full object-contain" draggable="false" />
-                                            </span>
-                                            <span className="relative">Yes</span>
-                                        </button>
+                                        {showYesButton ? (
+                                            <button
+                                                type="button"
+                                                onClick={onYes}
+                                                className={[
+                                                    "group relative overflow-hidden",
+                                                    "inline-flex items-center justify-center gap-2",
+                                                    "rounded-3xl px-6 py-3 text-sm sm:text-base font-extrabold",
+                                                    "text-slate-900 bg-white",
+                                                    "shadow-[0_22px_55px_-40px_rgba(0,0,0,0.8)]",
+                                                    "transition-all duration-200 ease-out",
+                                                    "hover:-translate-y-0.5 active:translate-y-0",
+                                                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+                                                    isYes ? "w-full" : "",
+                                                ].join(" ")}
+                                            >
+                                                <span className="relative h-5 w-5">
+                                                    <img src={YES_ICON} alt="Yes" className="h-full w-full object-contain" draggable="false" />
+                                                </span>
+                                                <span className="relative">Yes</span>
+                                            </button>
+                                        ) : null}
 
                                         {showNoButton ? (
                                             <button
