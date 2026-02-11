@@ -173,12 +173,21 @@ export default function Navigation() {
         };
     }, [ownerToken]);
 
+    const resetCanI = () => {
+        setChoice("none");
+        setNoStep(0);
+        localStorage.setItem("jex_can_i_choice", "none");
+        localStorage.setItem("jex_can_i_no_step", "0");
+    };
+
     const openOverlay = () => {
+        resetCanI();
         localStorage.setItem("jex_overlay_open", "1");
         window.dispatchEvent(new Event("jex_overlay_open"));
     };
 
     const closeOverlay = () => {
+        resetCanI();
         localStorage.setItem("jex_overlay_open", "0");
         window.dispatchEvent(new Event("jex_overlay_close"));
     };
@@ -201,13 +210,6 @@ export default function Navigation() {
     const closeMessageOverlay = () => {
         localStorage.setItem("jex_message_open", "0");
         window.dispatchEvent(new Event("jex_message_close"));
-    };
-
-    const resetCanI = () => {
-        setChoice("none");
-        setNoStep(0);
-        localStorage.setItem("jex_can_i_choice", "none");
-        localStorage.setItem("jex_can_i_no_step", "0");
     };
 
     const navItems = useMemo(
@@ -238,10 +240,9 @@ export default function Navigation() {
     const YES_ICON = "/yes.png";
     const NO_ICON = "/no.png";
 
-    const noLabels = useMemo(
-        () => ["No", "Are you sure?", "Are you really sure?", "Really really sure?", "Last Chance?", "But.."],
-        []
-    );
+    const ENVELOPE_ICON = "/loveletter.gif";
+
+    const noLabels = useMemo(() => ["No", "Are you sure?", "Are you really sure?", "Really really sure?", "Last Chance?", "But.."], []);
 
     const yesMessage = useMemo(
         () => ({
@@ -263,7 +264,7 @@ export default function Navigation() {
 
     const sideMessage = choice === "yes" ? yesMessage : null;
 
-    const showNoButton = !(choice === "no" && noStep >= 5);
+    const showNoButton = choice !== "yes" && !(choice === "no" && noStep >= 5);
 
     const noLabel = noLabels[Math.min(noStep, noLabels.length - 1)];
 
@@ -279,12 +280,54 @@ export default function Navigation() {
 
     const GALLERY_PHOTOS = useMemo(
         () => [
-            { src: "/us1.png", alt: "Us 1", rot: "-rotate-2", tape: "left-6 -top-3 rotate-[-10deg]" },
-            { src: "/us2.png", alt: "Us 2", rot: "rotate-1", tape: "right-8 -top-3 rotate-[12deg]" },
-            { src: "/us3.png", alt: "Us 3", rot: "-rotate-1", tape: "left-10 -top-3 rotate-[8deg]" },
-            { src: "/us4.png", alt: "Us 4", rot: "rotate-2", tape: "right-10 -top-3 rotate-[-8deg]" },
-            { src: "/us5.png", alt: "Us 5", rot: "-rotate-2", tape: "left-7 -top-3 rotate-[14deg]" },
-            { src: "/us6.png", alt: "Us 6", rot: "rotate-1", tape: "right-6 -top-3 rotate-[-12deg]" },
+            {
+                src: "/us1.png",
+                alt: "Us 1",
+                rot: "-rotate-2",
+                tape: "left-6 -top-3 rotate-[-10deg]",
+                title: "Better days with you",
+                message: "just having fun together",
+            },
+            {
+                src: "/us2.png",
+                alt: "Us 2",
+                rot: "rotate-1",
+                tape: "right-8 -top-3 rotate-[12deg]",
+                title: "Late nights & laughs",
+                message: "the kind that stays with me",
+            },
+            {
+                src: "/us3.png",
+                alt: "Us 3",
+                rot: "-rotate-1",
+                tape: "left-10 -top-3 rotate-[8deg]",
+                title: "My favorite person",
+                message: "always you, always",
+            },
+            {
+                src: "/us4.png",
+                alt: "Us 4",
+                rot: "rotate-2",
+                tape: "right-10 -top-3 rotate-[-8deg]",
+                title: "Little moments",
+                message: "that felt like everything",
+            },
+            {
+                src: "/us5.png",
+                alt: "Us 5",
+                rot: "-rotate-2",
+                tape: "left-7 -top-3 rotate-[14deg]",
+                title: "Us being us",
+                message: "no filters, just love",
+            },
+            {
+                src: "/us6.png",
+                alt: "Us 6",
+                rot: "rotate-1",
+                tape: "right-6 -top-3 rotate-[-12deg]",
+                title: "Still my safe place",
+                message: "even from miles away",
+            },
         ],
         []
     );
@@ -400,15 +443,10 @@ export default function Navigation() {
     if (overlayOpen) {
         const isDefault = choice === "none";
         const isNo = choice === "no";
+        const isYes = choice === "yes";
 
         return (
-            <div
-                className="fixed inset-0 z-[999] font-['Poppins']"
-                role="dialog"
-                aria-modal="true"
-                aria-label="Can I overlay"
-                onClick={closeOverlay}
-            >
+            <div className="fixed inset-0 z-[999] font-['Poppins']" role="dialog" aria-modal="true" aria-label="Can I overlay" onClick={closeOverlay}>
                 <div className="absolute inset-0 bg-black/30 backdrop-blur-md" aria-hidden="true" />
 
                 <div className="relative z-10 min-h-[100svh] w-full px-4 py-6 sm:py-10 flex items-center justify-center">
@@ -423,9 +461,7 @@ export default function Navigation() {
                                 Will You Be My Valentine?
                             </p>
 
-                            <p className="mt-2 text-[12px] sm:text-sm font-medium text-white/80">
-                                Just one click… and you’ll make my day.
-                            </p>
+                            <p className="mt-2 text-[12px] sm:text-sm font-medium text-white/80">Just one click… and you’ll make my day.</p>
                         </div>
 
                         <div
@@ -443,99 +479,106 @@ export default function Navigation() {
                                 />
                             </div>
 
-                            {!isDefault && !isNo && (
+                            {isYes && (
                                 <div
                                     className={[
-                                        "relative mx-auto w-full max-w-xl",
-                                        "rounded-3xl border border-white/18 bg-white/12",
-                                        "backdrop-blur-md",
-                                        "p-4 sm:p-5",
-                                        "text-white",
-                                        "shadow-[0_22px_60px_-45px_rgba(0,0,0,0.85)]",
+                                        "w-full max-w-xl mx-auto",
+                                        "transition-all duration-700 ease-out will-change-transform",
                                         sideMessage ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1 pointer-events-none",
-                                        "transition-all duration-300 ease-out",
-                                        "after:content-[''] after:absolute after:-left-3 after:top-9 after:border-y-[12px] after:border-y-transparent after:border-r-[16px] after:border-r-white/12",
-                                        "before:content-[''] before:absolute before:-left-[13px] before:top-9 before:border-y-[12px] before:border-y-transparent before:border-r-[16px] before:border-r-white/18",
                                     ].join(" ")}
                                     onClick={(e) => e.stopPropagation()}
                                     aria-hidden={!sideMessage}
                                 >
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="min-w-0 flex items-start gap-3">
-                                            <div className="min-w-0">
-                                                <p className="text-base sm:text-lg font-extrabold tracking-tight">{sideMessage?.title || ""}</p>
-                                                <p className="mt-1 text-[12px] sm:text-sm text-white/85 leading-relaxed">{sideMessage?.body || ""}</p>
+                                    <div className="relative overflow-hidden rounded-[30px] border border-white/20 bg-white/90 shadow-[0_22px_80px_-60px_rgba(0,0,0,0.8)]">
+                                        <div className="flex items-center justify-between gap-3 border-b border-black/5 bg-white/70 px-5 py-4">
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <span className="grid h-9 w-9 place-items-center overflow-hidden rounded-2xl border border-black/10 bg-white shrink-0">
+                                                    <img src={ENVELOPE_ICON} alt="Envelope" draggable="false" className="h-6 w-6 object-contain" />
+                                                </span>
+                                                <div className="min-w-0">
+                                                    <div className="text-sm font-extrabold text-slate-900 truncate">{sideMessage?.title || ""}</div>
+                                                    <div className="text-[11px] font-semibold text-slate-500 truncate">For you, with love 💗</div>
+                                                </div>
                                             </div>
+
+                                            <button
+                                                type="button"
+                                                onClick={closeOverlay}
+                                                className="rounded-2xl border border-black/10 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+                                            >
+                                                Close
+                                            </button>
                                         </div>
 
-                                        <button
-                                            type="button"
-                                            onClick={resetCanI}
-                                            className={[
-                                                "shrink-0 rounded-2xl px-3 py-2",
-                                                "text-[11px] font-semibold text-white/85",
-                                                "bg-white/10 ring-1 ring-white/20",
-                                                "hover:bg-white/14",
-                                                "transition-all duration-200 ease-out",
-                                                "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
-                                            ].join(" ")}
-                                        >
-                                            Reset
-                                        </button>
+                                        <div className="px-5 pb-5 pt-4">
+                                            <div className="rounded-[22px] border border-[var(--soft-border)] bg-white/80 p-4 sm:p-5">
+                                                <div className="text-sm sm:text-[15px] font-semibold leading-relaxed text-slate-700 whitespace-pre-wrap">
+                                                    {sideMessage?.body || ""}
+                                                </div>
+                                                <div className="mt-4 flex items-center justify-between">
+                                                    <div className="text-[11px] font-bold text-slate-500">Sealed with love</div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             )}
                         </div>
 
                         <div className="mx-auto w-full max-w-xl mt-[-30px] sm:mt-[-70px]" onClick={(e) => e.stopPropagation()}>
-                            <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                                <button
-                                    type="button"
-                                    onClick={onYes}
-                                    className={[
-                                        "group relative overflow-hidden",
-                                        "inline-flex items-center justify-center gap-2",
-                                        "rounded-3xl px-6 py-3 text-sm sm:text-base font-extrabold",
-                                        "text-slate-900 bg-white",
-                                        "shadow-[0_22px_55px_-40px_rgba(0,0,0,0.8)]",
-                                        "transition-all duration-200 ease-out",
-                                        "hover:-translate-y-0.5 active:translate-y-0",
-                                        "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
-                                    ].join(" ")}
-                                >
-                                    <span className="relative h-5 w-5">
-                                        <img src={YES_ICON} alt="Yes" className="h-full w-full object-contain" draggable="false" />
-                                    </span>
-                                    <span className="relative">Yes</span>
-                                </button>
+                            <div className={isYes ? "flex justify-center" : ""}>
+                                <div className={isYes ? "w-full max-w-[360px]" : ""}>
+                                    <div className={isYes ? "" : "grid grid-cols-2 gap-2 sm:gap-3"}>
+                                        <button
+                                            type="button"
+                                            onClick={onYes}
+                                            className={[
+                                                "group relative overflow-hidden",
+                                                "inline-flex items-center justify-center gap-2",
+                                                "rounded-3xl px-6 py-3 text-sm sm:text-base font-extrabold",
+                                                "text-slate-900 bg-white",
+                                                "shadow-[0_22px_55px_-40px_rgba(0,0,0,0.8)]",
+                                                "transition-all duration-200 ease-out",
+                                                "hover:-translate-y-0.5 active:translate-y-0",
+                                                "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+                                                isYes ? "w-full" : "",
+                                            ].join(" ")}
+                                        >
+                                            <span className="relative h-5 w-5">
+                                                <img src={YES_ICON} alt="Yes" className="h-full w-full object-contain" draggable="false" />
+                                            </span>
+                                            <span className="relative">Yes</span>
+                                        </button>
 
-                                {showNoButton ? (
-                                    <button
-                                        type="button"
-                                        onClick={onNo}
-                                        className={[
-                                            "group relative overflow-hidden",
-                                            "inline-flex items-center justify-center gap-2",
-                                            "rounded-3xl px-6 py-3 text-sm sm:text-base font-extrabold",
-                                            "text-white bg-white/12",
-                                            "ring-1 ring-white/22",
-                                            "shadow-[0_22px_55px_-40px_rgba(0,0,0,0.8)]",
-                                            "backdrop-blur",
-                                            "transition-all duration-200 ease-out",
-                                            "hover:-translate-y-0.5 hover:bg-white/16",
-                                            "active:translate-y-0",
-                                            "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
-                                        ].join(" ")}
-                                    >
-                                        <span className="relative h-5 w-5 grid place-items-center">
-                                            <img src={NO_ICON} alt="No" className="h-full w-full object-contain" draggable="false" />
-                                        </span>
+                                        {showNoButton ? (
+                                            <button
+                                                type="button"
+                                                onClick={onNo}
+                                                className={[
+                                                    "group relative overflow-hidden",
+                                                    "inline-flex items-center justify-center gap-2",
+                                                    "rounded-3xl px-6 py-3 text-sm sm:text-base font-extrabold",
+                                                    "text-white bg-white/12",
+                                                    "ring-1 ring-white/22",
+                                                    "shadow-[0_22px_55px_-40px_rgba(0,0,0,0.8)]",
+                                                    "backdrop-blur",
+                                                    "transition-all duration-200 ease-out",
+                                                    "hover:-translate-y-0.5 hover:bg-white/16",
+                                                    "active:translate-y-0",
+                                                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+                                                ].join(" ")}
+                                            >
+                                                <span className="relative h-5 w-5 grid place-items-center">
+                                                    <img src={NO_ICON} alt="No" className="h-full w-full object-contain" draggable="false" />
+                                                </span>
 
-                                        <span className="relative">{noLabel}</span>
-                                    </button>
-                                ) : (
-                                    <div className="hidden sm:block" />
-                                )}
+                                                <span className="relative">{noLabel}</span>
+                                            </button>
+                                        ) : (
+                                            <div className="hidden sm:block" />
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -548,13 +591,7 @@ export default function Navigation() {
 
     if (galleryOpen) {
         return (
-            <div
-                className="fixed inset-0 z-[999] font-['Poppins']"
-                role="dialog"
-                aria-modal="true"
-                aria-label="Gallery overlay"
-                onClick={closeGalleryOverlay}
-            >
+            <div className="fixed inset-0 z-[999] font-['Poppins']" role="dialog" aria-modal="true" aria-label="Gallery overlay" onClick={closeGalleryOverlay}>
                 <div className="absolute inset-0 bg-black/30 backdrop-blur-md" aria-hidden="true" />
 
                 <div className="relative z-10 min-h-[100svh] w-full px-4 py-6 sm:py-10 flex items-center justify-center">
@@ -564,9 +601,7 @@ export default function Navigation() {
                                 Memories Gallery
                             </p>
 
-                            <p className="mt-2 text-[12px] sm:text-sm font-medium text-white/80">
-                                Still cherishing the memories we&apos;ve made together.
-                            </p>
+                            <p className="mt-2 text-[12px] sm:text-sm font-medium text-white/80">Still cherishing the memories we&apos;ve made together.</p>
                         </div>
 
                         <div className="mt-6 sm:mt-8">
@@ -614,27 +649,20 @@ export default function Navigation() {
 
                                                 <div className="relative p-2 sm:p-2.5">
                                                     <div className="relative overflow-hidden rounded-[18px]">
-                                                        <img
-                                                            src={p.src}
-                                                            alt={p.alt}
-                                                            className="h-44 sm:h-56 md:h-60 w-full object-cover select-none"
-                                                            draggable="false"
-                                                        />
+                                                        <img src={p.src} alt={p.alt} className="h-44 sm:h-56 md:h-60 w-full object-cover select-none" draggable="false" />
                                                     </div>
 
                                                     <div className="mt-2 flex items-center justify-between">
                                                         <div className="min-w-0">
                                                             <p className="truncate text-[11px] sm:text-xs font-extrabold tracking-tight text-slate-900">
-                                                                Better days with you
+                                                                {p.title || "Better days with you"}
                                                             </p>
                                                             <p className="truncate text-[10px] sm:text-[11px] text-slate-500">
-                                                                just having fun together
+                                                                {p.message || "just having fun together"}
                                                             </p>
                                                         </div>
 
-                                                        <span className="shrink-0 grid h-8 w-8 place-items-center rounded-2xl bg-white/75 ring-1 ring-rose-200/60 text-[13px]">
-                                                            💞
-                                                        </span>
+                                                        <span className="shrink-0 grid h-8 w-8 place-items-center rounded-2xl bg-white/75 ring-1 ring-rose-200/60 text-[13px]">💞</span>
                                                     </div>
                                                 </div>
 
@@ -674,250 +702,219 @@ export default function Navigation() {
 
     if (messageOpen) {
         return (
-            <div
-                className="fixed inset-0 z-[999] font-['Poppins']"
-                role="dialog"
-                aria-modal="true"
-                aria-label="Message overlay"
-                onClick={closeMessageOverlay}
-            >
+            <div className="fixed inset-0 z-[999] font-['Poppins']" role="dialog" aria-modal="true" aria-label="Message overlay" onClick={closeMessageOverlay}>
                 <div className="absolute inset-0 bg-black/30 backdrop-blur-md" aria-hidden="true" />
 
                 <div className="relative z-10 min-h-[100svh] w-full px-3 sm:px-4 py-6 sm:py-10 flex items-center justify-center">
                     <div className="w-full max-w-6xl" onClick={(e) => e.stopPropagation()}>
-                        <div className="mx-auto max-w-3xl text-center">
-                            <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/18 bg-white/10 px-4 py-2 text-[11px] font-semibold tracking-wide text-white/85">
-                                <span className="grid h-5 w-5 place-items-center rounded-full bg-white/15">🧸</span>
-                                Freedom Wall
-                            </div>
-
-                            <p className="mt-4 text-[22px] sm:text-[36px] leading-tight font-black tracking-tight text-white drop-shadow-[0_10px_24px_rgba(0,0,0,0.35)]">
-                                Random Thoughts & Messages
-                            </p>
-
-                            <p className="mt-2 text-[12px] sm:text-sm font-medium text-white/80">
-                                Post something sweet, funny, or random. Everyone can see it.
-                            </p>
-                        </div>
-
-                        <div className="mt-6 sm:mt-9 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)] items-start">
-                            <div className="rounded-3xl border border-white/18 bg-white/12 backdrop-blur-md shadow-[0_22px_60px_-45px_rgba(0,0,0,0.85)] overflow-hidden">
-                                <div className="px-4 sm:px-5 py-3 border-b border-white/12">
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="min-w-0">
-                                            <p className="text-white font-extrabold tracking-tight">Wall Posts</p>
-                                            <p className="mt-0.5 text-white/70 text-[11px] sm:text-xs">
-                                                Auto-refresh every 5 seconds
-                                            </p>
-                                        </div>
-
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => fetchWall()}
-                                                className={[
-                                                    "rounded-2xl px-3 py-2",
-                                                    "text-[11px] font-semibold text-white/85",
-                                                    "bg-white/10 ring-1 ring-white/20",
-                                                    "hover:bg-white/14",
-                                                    "transition-all duration-200 ease-out",
-                                                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
-                                                ].join(" ")}
-                                            >
-                                                Refresh
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                onClick={closeMessageOverlay}
-                                                className={[
-                                                    "rounded-2xl px-3 py-2",
-                                                    "text-[11px] font-semibold text-white/85",
-                                                    "bg-white/10 ring-1 ring-white/20",
-                                                    "hover:bg-white/14",
-                                                    "transition-all duration-200 ease-out",
-                                                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
-                                                ].join(" ")}
-                                            >
-                                                Close
-                                            </button>
+                        <div className="relative overflow-hidden rounded-[30px] border border-white/20 bg-white/90 shadow-[0_22px_80px_-60px_rgba(0,0,0,0.8)]">
+                            <div className="flex items-center justify-between gap-3 border-b border-black/5 bg-white/70 px-5 py-4">
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <span className="grid h-9 w-9 place-items-center overflow-hidden rounded-2xl border border-black/10 bg-white shrink-0">
+                                        <img src={ENVELOPE_ICON} alt="Envelope" draggable="false" className="h-6 w-6 object-contain" />
+                                    </span>
+                                    <div className="min-w-0">
+                                        <div className="text-sm font-extrabold text-slate-900 truncate">Random Thoughts & Messages</div>
+                                        <div className="text-[11px] font-semibold text-slate-500 truncate">
+                                            Post something sweet, funny, or random. Everyone can see it.
                                         </div>
                                     </div>
-
-                                    <div className="mt-3 flex flex-wrap items-center gap-2"></div>
                                 </div>
 
-                                <div className="p-3 sm:p-4">
-                                    {wallError ? (
-                                        <div className="rounded-3xl bg-white/10 ring-1 ring-white/18 p-4 text-center text-white/85 text-sm font-semibold">
-                                            {wallError}
-                                        </div>
-                                    ) : wallLoading ? (
-                                        <div className="rounded-3xl bg-white/10 ring-1 ring-white/18 p-5 text-center text-white/80 text-sm font-semibold">
-                                            Loading messages…
-                                        </div>
-                                    ) : wallMessages.length === 0 ? (
-                                        <div className="rounded-3xl bg-white/10 ring-1 ring-white/18 p-5 text-center text-white/80 text-sm font-semibold">
-                                            No messages yet. Be the first 🫶
-                                        </div>
-                                    ) : (
-                                        <div className="max-h-[60svh] overflow-auto pr-1">
-                                            <div className="grid gap-2.5">
-                                                {wallMessages.map((m) => {
-                                                    const canDeleteOwn = !!ownerHash && !!m?.owner && m.owner === ownerHash;
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <button
+                                        type="button"
+                                        onClick={() => fetchWall()}
+                                        className="rounded-2xl border border-black/10 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+                                    >
+                                        Refresh
+                                    </button>
 
-                                                    return (
-                                                        <div
-                                                            key={m.id}
-                                                            className={[
-                                                                "rounded-3xl bg-white/10 ring-1 ring-white/18",
-                                                                "p-4",
-                                                                "shadow-[0_18px_50px_-40px_rgba(0,0,0,0.85)]",
-                                                            ].join(" ")}
-                                                        >
-                                                            <div className="flex items-start justify-between gap-3">
-                                                                <div className="min-w-0">
-                                                                    <div className="flex flex-wrap items-center gap-2">
-                                                                        <p className="text-white font-extrabold text-sm tracking-tight truncate">
-                                                                            {m.name ? m.name : "Anonymous"}
-                                                                        </p>
-                                                                        {canDeleteOwn ? (
-                                                                            <span className="inline-flex items-center gap-1 rounded-full bg-white/10 ring-1 ring-white/18 px-2 py-0.5 text-[10px] font-extrabold text-white/80">
-                                                                                <span className="grid h-4 w-4 place-items-center rounded-full bg-white/12">👤</span>
-                                                                                Yours
-                                                                            </span>
-                                                                        ) : null}
+                                    <button
+                                        type="button"
+                                        onClick={closeMessageOverlay}
+                                        className="rounded-2xl border border-black/10 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="px-5 pb-5 pt-4">
+                                <div className="rounded-[22px] border border-[var(--soft-border)] bg-white/80 p-4 sm:p-5">
+                                    <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                                        <div className="text-[11px] sm:text-xs font-extrabold text-slate-700">
+                                            Freedom Wall{" "}
+                                            <span className="font-semibold text-slate-500">
+                                                · {wallStats.total} posts{wallStats.mine ? ` · ${wallStats.mine} yours` : ""}
+                                            </span>
+                                        </div>
+                                        <div className="text-[11px] sm:text-xs font-semibold text-slate-500">Auto-refresh every 5 seconds</div>
+                                    </div>
+
+                                    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)] items-start">
+                                        <div className="rounded-3xl border border-[var(--soft-border)] bg-white/70 shadow-[0_18px_50px_-40px_rgba(0,0,0,0.25)] overflow-hidden">
+                                            <div className="px-4 sm:px-5 py-3 border-b border-black/5 bg-white/60">
+                                                <p className="text-slate-900 font-extrabold tracking-tight">Wall Posts</p>
+                                                <p className="mt-0.5 text-slate-500 text-[11px] sm:text-xs font-semibold">See what everyone posted 🫶</p>
+                                            </div>
+
+                                            <div className="p-3 sm:p-4">
+                                                {wallError ? (
+                                                    <div className="rounded-3xl bg-white/80 ring-1 ring-[var(--soft-border)] p-4 text-center text-slate-700 text-sm font-semibold">
+                                                        {wallError}
+                                                    </div>
+                                                ) : wallLoading ? (
+                                                    <div className="rounded-3xl bg-white/80 ring-1 ring-[var(--soft-border)] p-5 text-center text-slate-600 text-sm font-semibold">
+                                                        Loading messages…
+                                                    </div>
+                                                ) : wallMessages.length === 0 ? (
+                                                    <div className="rounded-3xl bg-white/80 ring-1 ring-[var(--soft-border)] p-5 text-center text-slate-600 text-sm font-semibold">
+                                                        No messages yet. Be the first 🫶
+                                                    </div>
+                                                ) : (
+                                                    <div className="max-h-[60svh] overflow-auto pr-1">
+                                                        <div className="grid gap-2.5">
+                                                            {wallMessages.map((m) => {
+                                                                const canDeleteOwn = !!ownerHash && !!m?.owner && m.owner === ownerHash;
+
+                                                                return (
+                                                                    <div
+                                                                        key={m.id}
+                                                                        className={[
+                                                                            "rounded-3xl bg-white/80 ring-1 ring-[var(--soft-border)]",
+                                                                            "p-4",
+                                                                            "shadow-[0_18px_50px_-40px_rgba(0,0,0,0.25)]",
+                                                                        ].join(" ")}
+                                                                    >
+                                                                        <div className="flex items-start justify-between gap-3">
+                                                                            <div className="min-w-0">
+                                                                                <div className="flex flex-wrap items-center gap-2">
+                                                                                    <p className="text-slate-900 font-extrabold text-sm tracking-tight truncate">
+                                                                                        {m.name ? m.name : "Anonymous"}
+                                                                                    </p>
+                                                                                    {canDeleteOwn ? (
+                                                                                        <span className="inline-flex items-center gap-1 rounded-full bg-white/70 ring-1 ring-[var(--soft-border)] px-2 py-0.5 text-[10px] font-extrabold text-slate-700">
+                                                                                            <span className="grid h-4 w-4 place-items-center rounded-full bg-white">👤</span>
+                                                                                            Yours
+                                                                                        </span>
+                                                                                    ) : null}
+                                                                                </div>
+
+                                                                                <p className="mt-2 text-slate-700 text-sm leading-relaxed whitespace-pre-wrap break-words">
+                                                                                    {m.text}
+                                                                                </p>
+                                                                            </div>
+
+                                                                            <div className="shrink-0 flex items-center gap-2">
+                                                                                {canDeleteOwn ? (
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={() => deleteWall(m.id)}
+                                                                                        disabled={wallDeletingId === m.id}
+                                                                                        className={[
+                                                                                            "rounded-2xl px-3 py-2",
+                                                                                            "text-[11px] font-semibold text-slate-700",
+                                                                                            "bg-white/70 ring-1 ring-[var(--soft-border)]",
+                                                                                            "hover:bg-white",
+                                                                                            "transition-all duration-200 ease-out",
+                                                                                            "disabled:opacity-60 disabled:cursor-not-allowed",
+                                                                                            "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-white/70",
+                                                                                        ].join(" ")}
+                                                                                    >
+                                                                                        {wallDeletingId === m.id ? "Deleting…" : "Delete"}
+                                                                                    </button>
+                                                                                ) : null}
+
+                                                                                <span className="grid h-8 w-8 place-items-center rounded-2xl bg-white/70 ring-1 ring-[var(--soft-border)] text-[13px]">
+                                                                                    💌
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <p className="mt-3 text-slate-500 text-[10px] sm:text-[11px] font-semibold">{formatTime(m.ts)}</p>
                                                                     </div>
-
-                                                                    <p className="mt-2 text-white/90 text-sm leading-relaxed whitespace-pre-wrap break-words">
-                                                                        {m.text}
-                                                                    </p>
-                                                                </div>
-
-                                                                <div className="shrink-0 flex items-center gap-2">
-                                                                    {canDeleteOwn ? (
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => deleteWall(m.id)}
-                                                                            disabled={wallDeletingId === m.id}
-                                                                            className={[
-                                                                                "rounded-2xl px-3 py-2",
-                                                                                "text-[11px] font-semibold text-white/85",
-                                                                                "bg-white/10 ring-1 ring-white/20",
-                                                                                "hover:bg-white/14",
-                                                                                "transition-all duration-200 ease-out",
-                                                                                "disabled:opacity-60 disabled:cursor-not-allowed",
-                                                                                "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
-                                                                            ].join(" ")}
-                                                                        >
-                                                                            {wallDeletingId === m.id ? "Deleting…" : "Delete"}
-                                                                        </button>
-                                                                    ) : null}
-
-                                                                    <span className="grid h-8 w-8 place-items-center rounded-2xl bg-white/12 ring-1 ring-white/18 text-[13px]">
-                                                                        💌
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-
-                                                            <p className="mt-3 text-white/60 text-[10px] sm:text-[11px] font-semibold">
-                                                                {formatTime(m.ts)}
-                                                            </p>
+                                                                );
+                                                            })}
                                                         </div>
-                                                    );
-                                                })}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
-                                    )}
-                                </div>
-                            </div>
 
-                            <div className="rounded-3xl border border-white/18 bg-white/12 backdrop-blur-md shadow-[0_22px_60px_-45px_rgba(0,0,0,0.85)] overflow-hidden">
-                                <div className="px-4 sm:px-5 py-3 border-b border-white/12">
-                                    <p className="text-white font-extrabold tracking-tight">Write a post</p>
-                                </div>
+                                        <div className="rounded-3xl border border-[var(--soft-border)] bg-white/70 shadow-[0_18px_50px_-40px_rgba(0,0,0,0.25)] overflow-hidden">
+                                            <div className="px-4 sm:px-5 py-3 border-b border-black/5 bg-white/60">
+                                                <p className="text-slate-900 font-extrabold tracking-tight">Write a post</p>
+                                                <p className="mt-0.5 text-slate-500 text-[11px] sm:text-xs font-semibold">write your message below.</p>
+                                            </div>
 
-                                <div className="p-4 sm:p-5">
-                                    <label className="block">
-                                        <span className="block text-white/80 text-xs font-semibold">Name </span>
-                                        <input
-                                            value={wallName}
-                                            onChange={(e) => setWallName(e.target.value)}
-                                            placeholder="e.g. Adoy"
-                                            className={[
-                                                "mt-2 w-full",
-                                                "rounded-2xl px-4 py-2.5",
-                                                "bg-white/10 text-white placeholder:text-white/45",
-                                                "ring-1 ring-white/18",
-                                                "focus:outline-none focus:ring-2 focus:ring-white/70",
-                                                "text-sm font-semibold",
-                                            ].join(" ")}
-                                        />
-                                    </label>
+                                            <div className="p-4 sm:p-5">
+                                                <label className="block">
+                                                    <span className="block text-slate-600 text-xs font-semibold">Name</span>
+                                                    <input
+                                                        value={wallName}
+                                                        onChange={(e) => setWallName(e.target.value)}
+                                                        placeholder="Your Name"
+                                                        className={[
+                                                            "mt-2 w-full",
+                                                            "rounded-2xl px-4 py-2.5",
+                                                            "bg-white/80 text-slate-800 placeholder:text-slate-400",
+                                                            "ring-1 ring-[var(--soft-border)]",
+                                                            "focus:outline-none focus:ring-2 focus:ring-[var(--ring)]",
+                                                            "text-sm font-semibold",
+                                                        ].join(" ")}
+                                                    />
+                                                </label>
 
-                                    <label className="mt-4 block">
-                                        <span className="block text-white/80 text-xs font-semibold">Message</span>
-                                        <textarea
-                                            value={wallText}
-                                            onChange={(e) => setWallText(e.target.value)}
-                                            onKeyDown={onWallKeyDown}
-                                            placeholder="Write something…"
-                                            rows={6}
-                                            className={[
-                                                "mt-2 w-full resize-none",
-                                                "rounded-2xl px-4 py-3",
-                                                "bg-white/10 text-white placeholder:text-white/45",
-                                                "ring-1 ring-white/18",
-                                                "focus:outline-none focus:ring-2 focus:ring-white/70",
-                                                "text-sm font-semibold leading-relaxed",
-                                            ].join(" ")}
-                                        />
-                                    </label>
+                                                <label className="mt-4 block">
+                                                    <span className="block text-slate-600 text-xs font-semibold">Message</span>
+                                                    <textarea
+                                                        value={wallText}
+                                                        onChange={(e) => setWallText(e.target.value)}
+                                                        onKeyDown={onWallKeyDown}
+                                                        placeholder="Write something…"
+                                                        rows={6}
+                                                        className={[
+                                                            "mt-2 w-full resize-none",
+                                                            "rounded-2xl px-4 py-3",
+                                                            "bg-white/80 text-slate-800 placeholder:text-slate-400",
+                                                            "ring-1 ring-[var(--soft-border)]",
+                                                            "focus:outline-none focus:ring-2 focus:ring-[var(--ring)]",
+                                                            "text-sm font-semibold leading-relaxed",
+                                                        ].join(" ")}
+                                                    />
+                                                </label>
 
-                                    <div className="mt-4 grid gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={postWall}
-                                            disabled={wallPosting || !(wallText || "").trim()}
-                                            className={[
-                                                "w-full inline-flex items-center justify-center gap-2",
-                                                "rounded-3xl px-5 py-3",
-                                                "text-sm font-extrabold",
-                                                "text-slate-900 bg-white",
-                                                "shadow-[0_22px_55px_-40px_rgba(0,0,0,0.8)]",
-                                                "transition-all duration-200 ease-out",
-                                                "hover:-translate-y-0.5 active:translate-y-0",
-                                                "disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0",
-                                                "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
-                                            ].join(" ")}
-                                        >
-                                            <span className="grid h-5 w-5 place-items-center rounded-full bg-black/5">📨</span>
-                                            {wallPosting ? "Posting…" : "Post Message"}
-                                        </button>
+                                                <div className="mt-4 grid gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={postWall}
+                                                        disabled={wallPosting || !(wallText || "").trim()}
+                                                        className={[
+                                                            "w-full inline-flex items-center justify-center gap-2",
+                                                            "rounded-3xl px-5 py-3",
+                                                            "text-sm font-extrabold",
+                                                            "text-white bg-[var(--accent-solid)]",
+                                                            "shadow-[0_22px_55px_-40px_rgba(0,0,0,0.35)]",
+                                                            "transition-all duration-200 ease-out",
+                                                            "hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0",
+                                                            "disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0",
+                                                            "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-white/70",
+                                                        ].join(" ")}
+                                                    >
+                                                        <span className="grid h-5 w-5 place-items-center rounded-full bg-white/15">📨</span>
+                                                        {wallPosting ? "Posting…" : "Post Message"}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-4 flex items-center justify-between">
+                                        <div className="text-[11px] font-bold text-slate-500">Sealed with love</div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <div className="mt-6 flex justify-center">
-                            <button
-                                type="button"
-                                onClick={closeMessageOverlay}
-                                className={[
-                                    "inline-flex items-center justify-center gap-2",
-                                    "rounded-3xl px-5 py-2.5",
-                                    "text-sm font-extrabold",
-                                    "text-white bg-white/12 ring-1 ring-white/22",
-                                    "shadow-[0_22px_55px_-40px_rgba(0,0,0,0.8)]",
-                                    "backdrop-blur",
-                                    "transition-all duration-200 ease-out",
-                                    "hover:-translate-y-0.5 hover:bg-white/16",
-                                    "active:translate-y-0",
-                                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
-                                ].join(" ")}
-                            >
-                                Close
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -956,9 +953,7 @@ export default function Navigation() {
                             </span>
 
                             <span className="min-w-0 flex flex-col leading-tight">
-                                <span className="truncate text-[13px] sm:text-sm font-extrabold tracking-tight text-slate-900">
-                                    ADOY&apos;S VALENTINE
-                                </span>
+                                <span className="truncate text-[13px] sm:text-sm font-extrabold tracking-tight text-slate-900">ADOY&apos;S VALENTINE</span>
                                 <span className="truncate text-[11px] sm:text-xs text-slate-500">Happy Valentine&apos;s Day!</span>
                             </span>
                         </a>
@@ -1135,7 +1130,7 @@ export default function Navigation() {
                                             "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-white/70",
                                         ].join(" ")}
                                     >
-                                        <span className="transition-transform duration-200 ease-out group-hover/mob:scale-[1.07]">❓</span>
+                                        <span className="transition-transform duration-200 ease-out group-hover/mob:scale-[1.07]"></span>
                                         <span className="truncate">Will You?</span>
                                     </button>
                                 ) : null}
@@ -1153,7 +1148,7 @@ export default function Navigation() {
                                         "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-white/70",
                                     ].join(" ")}
                                 >
-                                    <span className="transition-transform duration-200 ease-out group-hover/mob:scale-[1.07]">✨</span>
+                                    <span className="transition-transform duration-200 ease-out group-hover/mob:scale-[1.07]"></span>
                                     <span className="truncate">Gallery</span>
                                 </button>
 
@@ -1170,7 +1165,7 @@ export default function Navigation() {
                                         "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-white/70",
                                     ].join(" ")}
                                 >
-                                    <span className="transition-transform duration-200 ease-out group-hover/mob:scale-[1.07]">💌</span>
+                                    <span className="transition-transform duration-200 ease-out group-hover/mob:scale-[1.07]"></span>
                                     <span className="truncate">Message</span>
                                 </button>
                             </div>
