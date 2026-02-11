@@ -192,6 +192,8 @@ export default function Hero() {
 
     const sfxRef = useRef(null);
 
+    const autoOpenTimerRef = useRef(null);
+
     useEffect(() => {
         sfxRef.current = new Audio(MATCH_SFX);
         sfxRef.current.preload = "auto";
@@ -252,6 +254,8 @@ export default function Hero() {
 
     useEffect(() => {
         if (!envelopeOpen) {
+            if (autoOpenTimerRef.current) clearTimeout(autoOpenTimerRef.current);
+            autoOpenTimerRef.current = null;
             setValentineOpen(false);
             localStorage.setItem("jex_read_open", "0");
             window.dispatchEvent(new Event("jex_read_close"));
@@ -264,8 +268,17 @@ export default function Hero() {
         const prevOverflow = document.body.style.overflow;
         document.body.style.overflow = "hidden";
 
+        if (autoOpenTimerRef.current) clearTimeout(autoOpenTimerRef.current);
+        setValentineOpen(false);
+        autoOpenTimerRef.current = setTimeout(() => {
+            setValentineOpen(true);
+            autoOpenTimerRef.current = null;
+        }, 2000);
+
         return () => {
             document.body.style.overflow = prevOverflow;
+            if (autoOpenTimerRef.current) clearTimeout(autoOpenTimerRef.current);
+            autoOpenTimerRef.current = null;
             setValentineOpen(false);
             localStorage.setItem("jex_read_open", "0");
             window.dispatchEvent(new Event("jex_read_close"));
@@ -277,6 +290,8 @@ export default function Hero() {
         if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
         if (glowTimerRef.current) clearTimeout(glowTimerRef.current);
         if (burstTimerRef.current) clearTimeout(burstTimerRef.current);
+        if (autoOpenTimerRef.current) clearTimeout(autoOpenTimerRef.current);
+        autoOpenTimerRef.current = null;
 
         localStorage.removeItem("valentine_match_unlocked");
         window.dispatchEvent(new Event("valentine_match_locked"));
@@ -704,7 +719,11 @@ export default function Hero() {
                                   >
                                       <button
                                           type="button"
-                                          onClick={() => setValentineOpen(true)}
+                                          onClick={() => {
+                                              if (autoOpenTimerRef.current) clearTimeout(autoOpenTimerRef.current);
+                                              autoOpenTimerRef.current = null;
+                                              setValentineOpen(true);
+                                          }}
                                           className={[
                                               "group relative grid place-items-center",
                                               "bg-transparent border-0 shadow-none",
@@ -931,7 +950,7 @@ export default function Hero() {
 
                                             <div className="mt-4 text-xl sm:text-3xl font-extrabold tracking-tight text-slate-900">Match the cute cards.</div>
                                             <div className="mt-1 text-[13px] sm:text-base font-semibold text-slate-600">
-                                                Match all the pairs to unlock a small Valentine message made especially for you. Enjoy ADOY! 💗
+                                                Match all the pairs to unlock the Valentine message made especially for you. Enjoy ADOY! 💗
                                             </div>
                                         </div>
 
@@ -978,7 +997,7 @@ export default function Hero() {
                                     </div>
 
                                     <div className="mt-5 sm:mt-6 relative">
-                                        <div ref={boardRef} className="relative">
+                                        <div className="relative" ref={boardRef}>
                                             <div className="pointer-events-none absolute inset-0 z-20">
                                                 {heartBursts.map((b) => (
                                                     <div key={b.id} className="absolute inset-0">
