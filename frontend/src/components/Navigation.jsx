@@ -291,6 +291,8 @@ export default function Navigation() {
                 tape: "left-6 -top-3 rotate-[-10deg]",
                 title: "Better days with you",
                 message: "just having fun together",
+                previewTitle: "Better days with you",
+                previewMessage: "Eto yung times na naabutan kitang afk, kaya naman kinuha ko na yung chance na mag picture kasama ka hehe.",
             },
             {
                 src: "/yodaandme.png",
@@ -299,6 +301,8 @@ export default function Navigation() {
                 tape: "right-8 -top-3 rotate-[12deg]",
                 title: "Treasured moments",
                 message: "the kind that stays with me",
+                previewTitle: "Treasured moments",
+                previewMessage: "Eto naman yung last time, as usual afk ka parin dito so nag picture ulet ako.",
             },
             {
                 src: "/yoda3.png",
@@ -307,6 +311,8 @@ export default function Navigation() {
                 tape: "left-10 -top-3 rotate-[8deg]",
                 title: "My favorite person",
                 message: "always you, always",
+                previewTitle: "My favorite person",
+                previewMessage: "Naalala mo yung sinabi ko na tayo lang ikaw sa tapat ng garden mo? eto yun hehe, ang cute.",
             },
             {
                 src: "/meandu.png",
@@ -315,6 +321,8 @@ export default function Navigation() {
                 tape: "right-10 -top-3 rotate-[-8deg]",
                 title: "Little moments",
                 message: "that felt like everything",
+                previewTitle: "Little moments",
+                previewMessage: "Another afk moments mo hahahaha, picture ulet meeee with adoyyyyy! :)",
             },
             {
                 src: "/meandu2.png",
@@ -323,6 +331,8 @@ export default function Navigation() {
                 tape: "left-7 -top-3 rotate-[14deg]",
                 title: "Cherished memories",
                 message: "no filters, just love",
+                previewTitle: "Cherished memories",
+                previewMessage: "Favorite ko na picture ni adoy tska ni zums, buti pa dito may pic sila.",
             },
             {
                 src: "/6.png",
@@ -331,6 +341,8 @@ export default function Navigation() {
                 tape: "right-6 -top-3 rotate-[-12deg]",
                 title: "Still my safe place",
                 message: "even from miles away",
+                previewTitle: "Still my safe place",
+                previewMessage: "Sa Elyu naman to, habang afk tska sumasayaw hehe.",
             },
         ],
         []
@@ -611,6 +623,8 @@ export default function Navigation() {
 
     if (galleryOpen) {
         const activePhoto = galleryActiveIndex == null ? null : GALLERY_PHOTOS[galleryActiveIndex] || null;
+        const previewTitle = activePhoto ? activePhoto.previewTitle || activePhoto.title : "";
+        const previewMessage = activePhoto ? activePhoto.previewMessage || "" : "";
 
         return (
             <div className="fixed inset-0 z-[999] font-['Poppins']" role="dialog" aria-modal="true" aria-label="Gallery overlay" onClick={closeGalleryOverlay}>
@@ -721,25 +735,15 @@ export default function Navigation() {
                         </div>
 
                         {activePhoto ? (
-                            <div
-                                className="fixed inset-0 z-[1000]"
-                                role="dialog"
-                                aria-modal="true"
-                                aria-label="Gallery photo view"
-                                onClick={() => setGalleryActiveIndex(null)}
-                            >
+                            <div className="fixed inset-0 z-[1000]" role="dialog" aria-modal="true" aria-label="Gallery photo view" onClick={() => setGalleryActiveIndex(null)}>
                                 <div className="absolute inset-0 bg-black/50 backdrop-blur-md" aria-hidden="true" />
                                 <div className="relative z-10 min-h-[100svh] w-full px-4 py-6 flex items-center justify-center">
                                     <div className="w-full max-w-3xl" onClick={(e) => e.stopPropagation()}>
                                         <div className="relative overflow-hidden rounded-[30px] border border-white/20 bg-white/90 shadow-[0_22px_80px_-60px_rgba(0,0,0,0.85)]">
                                             <div className="flex items-center justify-between gap-3 border-b border-black/5 bg-white/70 px-5 py-4">
                                                 <div className="min-w-0">
-                                                    <div className="text-sm sm:text-base font-extrabold text-slate-900 truncate">
-                                                        {activePhoto.title || "Better days with you"}
-                                                    </div>
-                                                    <div className="text-[11px] sm:text-xs font-semibold text-slate-500 truncate">
-                                                        Tap outside or press Esc to close
-                                                    </div>
+                                                    <div className="text-sm sm:text-base font-extrabold text-slate-900 truncate">{previewTitle || ""}</div>
+                                                    <div className="text-[11px] sm:text-xs font-semibold text-slate-500 truncate">Tap outside or press Esc to close</div>
                                                 </div>
 
                                                 <button
@@ -753,26 +757,17 @@ export default function Navigation() {
 
                                             <div className="p-4 sm:p-6">
                                                 <div className="relative overflow-hidden rounded-[26px] bg-white/70 ring-1 ring-[var(--soft-border)]">
-                                                    <img
-                                                        src={activePhoto.src}
-                                                        alt={activePhoto.alt}
-                                                        className="w-full max-h-[65svh] object-contain select-none"
-                                                        draggable="false"
-                                                    />
+                                                    <img src={activePhoto.src} alt={activePhoto.alt} className="w-full max-h-[65svh] object-contain select-none" draggable="false" />
                                                 </div>
 
                                                 <div className="mt-4 rounded-[22px] border border-[var(--soft-border)] bg-white/80 p-4 sm:p-5">
-                                                    <div className="text-slate-900 font-extrabold tracking-tight text-sm sm:text-[15px]">
-                                                        {activePhoto.title || "Better days with you"}
-                                                    </div>
+                                                    <div className="text-slate-900 font-extrabold tracking-tight text-sm sm:text-[15px]">{previewTitle || ""}</div>
                                                     <div className="mt-2 text-slate-700 text-sm sm:text-[15px] font-semibold leading-relaxed whitespace-pre-wrap">
-                                                        {activePhoto.message || "just having fun together"}
+                                                        {previewMessage || ""}
                                                     </div>
                                                     <div className="mt-4 flex items-center justify-between">
                                                         <div className="text-[11px] font-bold text-slate-500">Sealed with love</div>
-                                                        <span className="grid h-9 w-9 place-items-center rounded-2xl bg-white ring-1 ring-[var(--soft-border)] text-[14px]">
-                                                            💞
-                                                        </span>
+                                                        <span className="grid h-9 w-9 place-items-center rounded-2xl bg-white ring-1 ring-[var(--soft-border)] text-[14px]">💞</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -802,9 +797,7 @@ export default function Navigation() {
                                     </span>
                                     <div className="min-w-0">
                                         <div className="text-sm font-extrabold text-slate-900 truncate">Random Thoughts & Messages</div>
-                                        <div className="text-[11px] font-semibold text-slate-500 truncate">
-                                            Post something sweet, funny, or random. Everyone can see it.
-                                        </div>
+                                        <div className="text-[11px] font-semibold text-slate-500 truncate">Post something sweet, funny, or random. Everyone can see it.</div>
                                     </div>
                                 </div>
 
@@ -888,9 +881,7 @@ export default function Navigation() {
                                                                                     ) : null}
                                                                                 </div>
 
-                                                                                <p className="mt-2 text-slate-700 text-sm leading-relaxed whitespace-pre-wrap break-words">
-                                                                                    {m.text}
-                                                                                </p>
+                                                                                <p className="mt-2 text-slate-700 text-sm leading-relaxed whitespace-pre-wrap break-words">{m.text}</p>
                                                                             </div>
 
                                                                             <div className="shrink-0 flex items-center gap-2">
@@ -913,9 +904,7 @@ export default function Navigation() {
                                                                                     </button>
                                                                                 ) : null}
 
-                                                                                <span className="grid h-8 w-8 place-items-center rounded-2xl bg-white/70 ring-1 ring-[var(--soft-border)] text-[13px]">
-                                                                                    💌
-                                                                                </span>
+                                                                                <span className="grid h-8 w-8 place-items-center rounded-2xl bg-white/70 ring-1 ring-[var(--soft-border)] text-[13px]">💌</span>
                                                                             </div>
                                                                         </div>
 
