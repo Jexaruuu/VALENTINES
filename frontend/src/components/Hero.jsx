@@ -812,8 +812,8 @@ export default function Hero() {
                                                       Pero hindi ko alam yun nararamdaman ko. Alam mo ba isa ka sa naging inspirasyon ko habang nasa thesis arc
                                                       ako, kaya gusto ko rin talaga mag thankyou sayo adoyyy! Palagi kang kasama sa prayers ko at wish ko always
                                                       na maging masaya ka lang palagi, kayo ni baby Aqui. Hoping din ako na someday magkita ulet tayo and syempre
-                                                      makita din si baby aqui hehe. So ayun lang, Sana nagustuhan mo to and sana napangiti kita kahit papano hehehe.
-                                                      Ingat palagi Adoyyyyy! 💗<br />
+                                                      makita din si baby aqui hehe. So ayun lang, Sana nagustuhan mo to and sana napangiti kita kahit papano hehehe. Mahalaga ka, mahalaga ka palagi.
+                                                      Ingat always Adoyyyyy! 💗<br />
                                                   </div>
                                                   <div className="mt-4 flex items-center justify-between">
                                                       <div className="text-[11px] font-bold text-slate-500">Sealed with love</div>
