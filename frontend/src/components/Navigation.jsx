@@ -27,6 +27,8 @@ export default function Navigation() {
 
     const pollRef = useRef(null);
 
+    const [galleryActiveIndex, setGalleryActiveIndex] = useState(null);
+
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 10);
         onScroll();
@@ -442,6 +444,20 @@ export default function Navigation() {
         return { total, mine };
     }, [wallMessages, ownerHash]);
 
+    useEffect(() => {
+        if (!galleryOpen) {
+            setGalleryActiveIndex(null);
+            return;
+        }
+
+        const onKeyDown = (e) => {
+            if (e.key === "Escape") setGalleryActiveIndex(null);
+        };
+
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+    }, [galleryOpen]);
+
     if (overlayOpen) {
         const isDefault = choice === "none";
         const isNo = choice === "no";
@@ -594,6 +610,8 @@ export default function Navigation() {
     }
 
     if (galleryOpen) {
+        const activePhoto = galleryActiveIndex == null ? null : GALLERY_PHOTOS[galleryActiveIndex] || null;
+
         return (
             <div className="fixed inset-0 z-[999] font-['Poppins']" role="dialog" aria-modal="true" aria-label="Gallery overlay" onClick={closeGalleryOverlay}>
                 <div className="absolute inset-0 bg-black/30 backdrop-blur-md" aria-hidden="true" />
@@ -617,10 +635,12 @@ export default function Navigation() {
 
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5">
                                     {GALLERY_PHOTOS.map((p, i) => (
-                                        <div
+                                        <button
                                             key={`${p.src}-${i}`}
+                                            type="button"
+                                            onClick={() => setGalleryActiveIndex(i)}
                                             className={[
-                                                "relative",
+                                                "relative text-left",
                                                 "rounded-[26px]",
                                                 "border border-white/18",
                                                 "bg-white/10",
@@ -629,6 +649,7 @@ export default function Navigation() {
                                                 "p-2 sm:p-3",
                                                 "transition-transform duration-200 ease-out",
                                                 "hover:-translate-y-0.5",
+                                                "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
                                                 p.rot,
                                             ].join(" ")}
                                         >
@@ -674,7 +695,7 @@ export default function Navigation() {
                                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_0%,rgba(255,255,255,0.85),transparent_55%),radial-gradient(circle_at_45%_0%,rgba(255,255,255,0.85),transparent_55%),radial-gradient(circle_at_75%_0%,rgba(255,255,255,0.85),transparent_55%)]" />
                                                 </div>
                                             </div>
-                                        </div>
+                                        </button>
                                     ))}
                                 </div>
                             </div>
@@ -698,6 +719,68 @@ export default function Navigation() {
                                 Close
                             </button>
                         </div>
+
+                        {activePhoto ? (
+                            <div
+                                className="fixed inset-0 z-[1000]"
+                                role="dialog"
+                                aria-modal="true"
+                                aria-label="Gallery photo view"
+                                onClick={() => setGalleryActiveIndex(null)}
+                            >
+                                <div className="absolute inset-0 bg-black/50 backdrop-blur-md" aria-hidden="true" />
+                                <div className="relative z-10 min-h-[100svh] w-full px-4 py-6 flex items-center justify-center">
+                                    <div className="w-full max-w-3xl" onClick={(e) => e.stopPropagation()}>
+                                        <div className="relative overflow-hidden rounded-[30px] border border-white/20 bg-white/90 shadow-[0_22px_80px_-60px_rgba(0,0,0,0.85)]">
+                                            <div className="flex items-center justify-between gap-3 border-b border-black/5 bg-white/70 px-5 py-4">
+                                                <div className="min-w-0">
+                                                    <div className="text-sm sm:text-base font-extrabold text-slate-900 truncate">
+                                                        {activePhoto.title || "Better days with you"}
+                                                    </div>
+                                                    <div className="text-[11px] sm:text-xs font-semibold text-slate-500 truncate">
+                                                        Tap outside or press Esc to close
+                                                    </div>
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setGalleryActiveIndex(null)}
+                                                    className="rounded-2xl border border-black/10 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+                                                >
+                                                    Close
+                                                </button>
+                                            </div>
+
+                                            <div className="p-4 sm:p-6">
+                                                <div className="relative overflow-hidden rounded-[26px] bg-white/70 ring-1 ring-[var(--soft-border)]">
+                                                    <img
+                                                        src={activePhoto.src}
+                                                        alt={activePhoto.alt}
+                                                        className="w-full max-h-[65svh] object-contain select-none"
+                                                        draggable="false"
+                                                    />
+                                                </div>
+
+                                                <div className="mt-4 rounded-[22px] border border-[var(--soft-border)] bg-white/80 p-4 sm:p-5">
+                                                    <div className="text-slate-900 font-extrabold tracking-tight text-sm sm:text-[15px]">
+                                                        {activePhoto.title || "Better days with you"}
+                                                    </div>
+                                                    <div className="mt-2 text-slate-700 text-sm sm:text-[15px] font-semibold leading-relaxed whitespace-pre-wrap">
+                                                        {activePhoto.message || "just having fun together"}
+                                                    </div>
+                                                    <div className="mt-4 flex items-center justify-between">
+                                                        <div className="text-[11px] font-bold text-slate-500">Sealed with love</div>
+                                                        <span className="grid h-9 w-9 place-items-center rounded-2xl bg-white ring-1 ring-[var(--soft-border)] text-[14px]">
+                                                            💞
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : null}
                     </div>
                 </div>
             </div>
@@ -1106,7 +1189,7 @@ export default function Navigation() {
                                     <span className="grid h-5 w-5 place-items-center rounded-full bg-white/70 overflow-hidden">
                                         <img src={BLUE_ICON} alt="Blue mode" className="h-full w-full object-cover" draggable="false" />
                                     </span>
-                                    Chill Mode  
+                                    Chill Mode
                                 </span>
                             </button>
                         </div>
