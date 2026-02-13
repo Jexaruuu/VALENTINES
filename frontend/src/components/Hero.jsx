@@ -803,7 +803,7 @@ export default function Hero() {
                                               <div className="rounded-[22px] border border-[var(--soft-border)] bg-white/80 p-4 sm:p-5">
                                                   <div className="text-sm sm:text-[15px] font-semibold leading-relaxed text-slate-700">
                                                       Hello Adoy, 🌹<br />
-                                                      Happy Valentine's Day, Kamusta ikaw? I'm here ulet. I hope na hindi ka pa nakukulitan sa akin huhu,
+                                                      Happy Valentine's Day, Kamusta ikaw? I'm here ulet. Sabi sayo hindi ako magsasawa gumawa ng mga ganto para sayo eh, I hope na hindi ka pa nakukulitan sa akin huhu,
                                                       Alam mo ba na hindi ko alam kung pano ko hihigitan yung previous na ginawa ko para sayo huhu, gusto ko
                                                       lang talaga na mapasaya ang isang Aila Medel kahit na sa simpleng bagay lang kaya ginagawa ko parin tong
                                                       mga to, and I hope nagugustuhan mo po, kaya sana hayaan mo lang ako ha, na i pa feel sayo yung deserved
@@ -813,7 +813,7 @@ export default function Hero() {
                                                       ako, kaya gusto ko rin talaga mag thankyou sayo adoyyy! Palagi kang kasama sa prayers ko at wish ko always
                                                       na maging masaya ka lang palagi, kayo ni baby Aqui. Hoping din ako na someday magkita ulet tayo and syempre
                                                       makita din si baby aqui hehe. So ayun lang, Sana nagustuhan mo to and sana napangiti kita kahit papano hehehe. Mahalaga ka, mahalaga ka palagi.
-                                                      Ingat always Adoyyyyy! 💗<br />
+                                                      Sana napasaya kita kahit na konti lang, Ingat always Adoyyyyy! 💗<br />
                                                   </div>
                                                   <div className="mt-4 flex items-center justify-between">
                                                       <div className="text-[11px] font-bold text-slate-500">Sealed with love</div>
