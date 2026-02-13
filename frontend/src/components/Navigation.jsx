@@ -216,7 +216,7 @@ export default function Navigation() {
         () => [
             { label: "Will You?", href: "#can-i" },
             { label: "Gallery", href: "#gallery" },
-            { label: "Message", href: "#message" },
+            { label: "Thoughts", href: "#message" },
         ],
         []
     );
@@ -247,7 +247,7 @@ export default function Navigation() {
     const yesMessage = useMemo(
         () => ({
             title: "Thankyou so much! Adoy.",
-            body: "Hi Adoy/Yoda/Aila, Hindi ko alam na sa lahat ng ginawa ko ay dito ako kinilig haha, Dami ko rin kasi talagang galaw eh, galawgaw hahaaha, So ayun I just wanted to say na sobrang saya ko na naging kaibigan kita kahit na sobrang layo natin sa isat isa. Gusto ko sana i take yung opportunity na to para ayain kang lumabas, actually nakapag book na ko eh, pero syempre joke lang po hehe. Dahil nga sobrang layo mo, aayain na lang kitang mag laro kasama ka, kahit anong laro basta kasama ka. Yun ay kung hindi naman ikaw busy okay po? Always kayo mag iingat adoy ha. Wag masyado mag pa stress sa work mo, wag kalimutang kumain kahit konti lang, and dapat always stay hydrated oki? Sobrang madaming thankyouu, hindi ako magsasawang mag thankyou hehe. Wag ikaw mag cry ha, gusto ko naka smile ikaw while reading all of this na kaartehan ko sa buhay hahaha. thankyouuuuu adoooy! see yaaa :)",
+            body: "Hi Adoy/Yoda/Aila, Hindi ko alam na sa lahat ng ginawa ko dito ako mas kinilig haha, Dami ko rin kasi talagang galaw eh, galawgaw hahaaha, So ayun I just wanted to say na sobrang saya ko na naging kaibigan kita kahit na sobrang layo natin sa isat isa. Gusto ko sana i take yung opportunity na to para ayain kang lumabas, actually nakapag book na ko eh, pero syempre joke lang po hehe. Dahil nga sobrang layo mo, aayain na lang kitang mag laro kasama ka, kahit anong laro basta kasama ka. Yun ay kung hindi naman ikaw busy okay po? Always kayo mag iingat adoy ha. Wag masyado mag pa stress sa work mo, wag kalimutang kumain kahit konti lang, and dapat always stay hydrated oki? Sobrang madaming thankyouu, hindi ako magsasawang mag thankyou hehe. Wag ikaw mag cry ha, gusto ko naka smile ikaw while reading all of this na kaartehan ko sa buhay hahaha. thankyouuuuu adoooy! see yaaa :)",
         }),
         []
     );
@@ -1011,7 +1011,7 @@ export default function Navigation() {
                                         );
                                     }
 
-                                    if (item.label === "Message") {
+                                    if (item.label === "Thoughts") {
                                         return (
                                             <button
                                                 key={item.label}
