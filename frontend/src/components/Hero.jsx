@@ -37,104 +37,20 @@ export default function Hero() {
 
     const TRACKS = useMemo(
         () => [
-            {
-                id: "valentine-0.5",
-                title: "Bughaw",
-                artist: "Maki",
-                cover: "/bughaw.png",
-                src: "/MAKI - Bughaw.mp3",
-            },
-            {
-                id: "valentine-0.1",
-                title: "Dilaw",
-                artist: "Maki",
-                cover: "/dilaw.png",
-                src: "/MAKI - Dilaw.mp3",
-            },
-            {
-                id: "valentine-0",
-                title: "Kahel Na Langit",
-                artist: "Maki",
-                cover: "/kahelnalangit.jpg",
-                src: "/MAKI - Kahel na Langit.mp3",
-            },
-            {
-                id: "valentine-00",
-                title: "Paralisado",
-                artist: "Arthur Nery & Adie",
-                cover: "/paralisado.jpg",
-                src: "/ARTHUR NERY - Paralisado.mp3",
-            },
-            {
-                id: "valentine-1",
-                title: "Disney Movie",
-                artist: "John Michael Howell & ZVC",
-                cover: "/disneymovie.jpg",
-                src: "/John Michael Howell & ZVC - Disney Movie.mp3",
-            },
-            {
-                id: "valentine-2",
-                title: "Pwede Ka Ba?",
-                artist: "Frank Ely",
-                cover: "/pwedekaba.jpg",
-                src: "/FRANK ELY - Pwede Ka Ba.mp3",
-            },
-            {
-                id: "valentine-3",
-                title: "I Like Her",
-                artist: "J3RO",
-                cover: "/ilikeher.jpg",
-                src: "/J3R0 - I Like Her.mp3",
-            },
-            {
-                id: "valentine-4",
-                title: "My Unsent Love Letter",
-                artist: "Aira",
-                cover: "/myunsentloveletter.png",
-                src: "/my unsent love letter - aira.mp3",
-            },
-            {
-                id: "valentine-5",
-                title: "Call U Mine",
-                artist: "J3RO",
-                cover: "/callumine.jpg",
-                src: "/J3R0 - Call U Mine.mp3",
-            },
-            {
-                id: "valentine-6",
-                title: "Feeling This Way",
-                artist: "J3RO",
-                cover: "/feelingthisway.jpg",
-                src: "/J3R0 - Feeling This Way.mp3",
-            },
-            {
-                id: "valentine-7",
-                title: "Honestly, Maybe",
-                artist: "Kanegi",
-                cover: "/honestlymaybe.jpg",
-                src: "/kanegi. - honestly, maybe.mp3",
-            },
-            {
-                id: "valentine-8",
-                title: "Only U",
-                artist: "J3RO",
-                cover: "/onlyu.jpg",
-                src: "/J3RO - Only U.mp3",
-            },
-            {
-                id: "valentine-9",
-                title: "Sunsets With You",
-                artist: "Cliff, Yden",
-                cover: "/sunsetswithyou.jpg",
-                src: "/Sunsets With You - Cliff, Yden.mp3",
-            },
-            {
-                id: "valentine-10",
-                title: "Ayaw Kitang Mawala",
-                artist: "Lirio",
-                cover: "/ayawkitangmawala.jpg",
-                src: "/Ayaw kitang mawala - Lirio.mp3",
-            },
+            { id: "valentine-0.5", title: "Bughaw", artist: "Maki", cover: "/bughaw.png", src: "/MAKI - Bughaw.mp3" },
+            { id: "valentine-0.1", title: "Dilaw", artist: "Maki", cover: "/dilaw.png", src: "/MAKI - Dilaw.mp3" },
+            { id: "valentine-0", title: "Kahel Na Langit", artist: "Maki", cover: "/kahelnalangit.jpg", src: "/MAKI - Kahel na Langit.mp3" },
+            { id: "valentine-00", title: "Paralisado", artist: "Arthur Nery & Adie", cover: "/paralisado.jpg", src: "/ARTHUR NERY - Paralisado.mp3" },
+            { id: "valentine-1", title: "Disney Movie", artist: "John Michael Howell & ZVC", cover: "/disneymovie.jpg", src: "/John Michael Howell & ZVC - Disney Movie.mp3" },
+            { id: "valentine-2", title: "Pwede Ka Ba?", artist: "Frank Ely", cover: "/pwedekaba.jpg", src: "/FRANK ELY - Pwede Ka Ba.mp3" },
+            { id: "valentine-3", title: "I Like Her", artist: "J3RO", cover: "/ilikeher.jpg", src: "/J3R0 - I Like Her.mp3" },
+            { id: "valentine-4", title: "My Unsent Love Letter", artist: "Aira", cover: "/myunsentloveletter.png", src: "/my unsent love letter - aira.mp3" },
+            { id: "valentine-5", title: "Call U Mine", artist: "J3RO", cover: "/callumine.jpg", src: "/J3R0 - Call U Mine.mp3" },
+            { id: "valentine-6", title: "Feeling This Way", artist: "J3RO", cover: "/feelingthisway.jpg", src: "/J3R0 - Feeling This Way.mp3" },
+            { id: "valentine-7", title: "Honestly, Maybe", artist: "Kanegi", cover: "/honestlymaybe.jpg", src: "/kanegi. - honestly, maybe.mp3" },
+            { id: "valentine-8", title: "Only U", artist: "J3RO", cover: "/onlyu.jpg", src: "/J3RO - Only U.mp3" },
+            { id: "valentine-9", title: "Sunsets With You", artist: "Cliff, Yden", cover: "/sunsetswithyou.jpg", src: "/Sunsets With You - Cliff, Yden.mp3" },
+            { id: "valentine-10", title: "Ayaw Kitang Mawala", artist: "Lirio", cover: "/ayawkitangmawala.jpg", src: "/Ayaw kitang mawala - Lirio.mp3" },
         ],
         [isBlue]
     );
@@ -152,11 +68,7 @@ export default function Hero() {
             [doubled[i], doubled[j]] = [doubled[j], doubled[i]];
         }
 
-        return doubled.map((c) => ({
-            ...c,
-            faceUp: false,
-            matched: false,
-        }));
+        return doubled.map((c) => ({ ...c, faceUp: false, matched: false }));
     };
 
     const [deck, setDeck] = useState(() => buildDeck());
@@ -400,9 +312,7 @@ export default function Hero() {
         const isMatch = a.pairKey === b.pairKey;
 
         if (isMatch) {
-            setDeck((prev) =>
-                prev.map((c) => (c.id === a.id || c.id === b.id ? { ...c, matched: true, faceUp: true } : c))
-            );
+            setDeck((prev) => prev.map((c) => (c.id === a.id || c.id === b.id ? { ...c, matched: true, faceUp: true } : c)));
             setScore((s) => s + 1);
             setJustMatchedKey(a.pairKey);
 
@@ -731,13 +641,13 @@ export default function Hero() {
                       <div className="absolute inset-0 bg-black/35 backdrop-blur-md" />
 
                       <div className="relative mx-auto grid min-h-dvh place-items-center px-4 py-6">
-                          <div className="relative w-full max-w-[1100px]" onMouseDown={(e) => e.stopPropagation()}>
+                          <div className="relative w-full max-w-[1240px]" onMouseDown={(e) => e.stopPropagation()}>
                               <div className="relative mx-auto flex w-full items-center justify-center">
                                   <div
                                       className={[
                                           "relative flex items-center justify-center",
                                           "transition-transform duration-700 ease-out will-change-transform",
-                                          valentineOpen ? "translate-x-0 lg:-translate-x-[220px]" : "translate-x-0",
+                                          valentineOpen ? "translate-x-0 lg:-translate-x-[260px]" : "translate-x-0",
                                       ].join(" ")}
                                   >
                                       <button
@@ -772,9 +682,11 @@ export default function Hero() {
                                   <div
                                       className={[
                                           "absolute left-1/2 top-1/2 -translate-y-1/2",
-                                          "w-[min(440px,92vw)]",
+                                          "w-[min(560px,94vw)]",
                                           "transition-all duration-700 ease-out will-change-transform",
-                                          valentineOpen ? "opacity-100 translate-x-[100px] lg:translate-x-[20px]" : "opacity-0 translate-x-0 pointer-events-none",
+                                          valentineOpen
+                                              ? "opacity-100 translate-x-[140px] lg:translate-x-[60px]"
+                                              : "opacity-0 translate-x-0 pointer-events-none",
                                       ].join(" ")}
                                       onMouseDown={(e) => e.stopPropagation()}
                                   >
@@ -801,7 +713,7 @@ export default function Hero() {
 
                                           <div className="px-5 pb-5 pt-4">
                                               <div className="rounded-[22px] border border-[var(--soft-border)] bg-white/80 p-4 sm:p-5">
-                                                  <div className="text-sm sm:text-[15px] font-semibold leading-relaxed text-slate-700">
+                                                  <div className="v-modal-scroll max-h-[62vh] overflow-y-auto pr-1 text-sm sm:text-[15px] font-semibold leading-relaxed text-slate-700">
                                                       Hello Adoy, 🌹<br />
                                                       Happy Valentine's Day, Kamusta ikaw? I'm here ulet. Sabi sayo hindi ako magsasawa gumawa ng mga ganto para sayo eh, I hope na hindi ka pa nakukulitan sa akin huhu,
                                                       Alam mo ba na hindi ko alam kung pano ko hihigitan yung previous na ginawa ko para sayo huhu, gusto ko
@@ -814,9 +726,9 @@ export default function Hero() {
                                                       na maging masaya ka lang palagi, kayo ni baby Aqui. Hoping din ako na someday magkita ulet tayo and syempre
                                                       makita din si baby aqui hehe. So ayun lang, Sana nagustuhan mo to and sana napangiti kita kahit papano hehehe. Mahalaga ka, mahalaga ka palagi.
                                                       Sana napasaya kita kahit na konti lang, Ingat always Adoyyyyy! 💗<br />
-                                                  </div>
-                                                  <div className="mt-4 flex items-center justify-between">
-                                                      <div className="text-[11px] font-bold text-slate-500">Sealed with love</div>
+                                                      <div className="mt-4 flex items-center justify-between">
+                                                          <div className="text-[11px] font-bold text-slate-500">Sealed with love</div>
+                                                      </div>
                                                   </div>
                                               </div>
                                           </div>
@@ -881,13 +793,7 @@ export default function Hero() {
             el.setPointerCapture(e.pointerId);
         } catch {}
 
-        queueDragRef.current = {
-            active: true,
-            startY: e.clientY,
-            startScrollTop: el.scrollTop,
-            pid: e.pointerId,
-        };
-
+        queueDragRef.current = { active: true, startY: e.clientY, startScrollTop: el.scrollTop, pid: e.pointerId };
         setQueueDragging(true);
     };
 
@@ -940,6 +846,14 @@ export default function Hero() {
                     -ms-overflow-style: none;
                 }
                 .v-queue-scroll::-webkit-scrollbar {
+                    width: 0px;
+                    height: 0px;
+                }
+                .v-modal-scroll {
+                    scrollbar-width: none;
+                    -ms-overflow-style: none;
+                }
+                .v-modal-scroll::-webkit-scrollbar {
                     width: 0px;
                     height: 0px;
                 }
@@ -1279,10 +1193,7 @@ export default function Hero() {
                                                 "select-none",
                                                 queueDragging ? "cursor-grabbing" : "cursor-grab",
                                             ].join(" ")}
-                                            style={{
-                                                maxHeight: "min(520px, 42vh)",
-                                                touchAction: "none",
-                                            }}
+                                            style={{ maxHeight: "min(520px, 42vh)", touchAction: "none" }}
                                         >
                                             {queue.map((t, idx) => {
                                                 const active = idx === trackIndex;
@@ -1329,9 +1240,7 @@ export default function Hero() {
                                                         className={[
                                                             "flex w-full items-center gap-3 rounded-3xl border px-3 py-2 text-left",
                                                             "transition-all duration-200 ease-out",
-                                                            active
-                                                                ? "border-[var(--soft-border)] bg-white/85 shadow-sm"
-                                                                : "border-[var(--soft-border)] bg-white/60 hover:bg-white/80 hover:-translate-y-0.5",
+                                                            active ? "border-[var(--soft-border)] bg-white/85 shadow-sm" : "border-[var(--soft-border)] bg-white/60 hover:bg-white/80 hover:-translate-y-0.5",
                                                             isOver ? "ring-2 ring-[var(--ring)]" : "",
                                                             "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-white/70",
                                                             "cursor-pointer",
