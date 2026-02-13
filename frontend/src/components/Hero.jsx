@@ -59,6 +59,13 @@ export default function Hero() {
                 src: "/MAKI - Kahel na Langit.mp3",
             },
             {
+                id: "valentine-00",
+                title: "Paralisado",
+                artist: "Arthur Nery & Adie",
+                cover: "/paralisado.jpg",
+                src: "/ARTHUR NERY - Paralisado.mp3",
+            },
+            {
                 id: "valentine-1",
                 title: "Disney Movie",
                 artist: "John Michael Howell & ZVC",
@@ -602,6 +609,22 @@ export default function Hero() {
         } else {
             a.pause();
             setPlaying(false);
+        }
+    };
+
+    const playNowAtIndex = async (idx) => {
+        if (!queue.length) return;
+        const nextIdx = Math.max(0, Math.min(queue.length - 1, idx));
+        autoplayNextRef.current = true;
+        setTrackIndex(nextIdx);
+        const a = audioRef.current;
+        if (a) {
+            try {
+                await a.play();
+                setPlaying(true);
+            } catch {
+                setPlaying(false);
+            }
         }
     };
 
@@ -1302,7 +1325,7 @@ export default function Hero() {
                                                             setDragId(null);
                                                             setDragOverId(null);
                                                         }}
-                                                        onClick={() => setTrackIndex(idx)}
+                                                        onClick={() => playNowAtIndex(idx)}
                                                         className={[
                                                             "flex w-full items-center gap-3 rounded-3xl border px-3 py-2 text-left",
                                                             "transition-all duration-200 ease-out",

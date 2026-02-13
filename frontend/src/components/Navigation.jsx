@@ -1076,7 +1076,7 @@ export default function Navigation() {
                                     <span className="grid h-5 w-5 place-items-center rounded-full bg-white/70 overflow-hidden">
                                         <img src={RED_ICON} alt="Red mode" className="h-full w-full object-cover" draggable="false" />
                                     </span>
-                                    Blush
+                                    Blush Mode
                                 </span>
 
                                 <span className="relative inline-flex h-7 w-12 sm:h-8 sm:w-14 items-center rounded-full bg-white/70 ring-1 ring-[var(--soft-border)] transition-all duration-200 ease-out">
@@ -1106,7 +1106,7 @@ export default function Navigation() {
                                     <span className="grid h-5 w-5 place-items-center rounded-full bg-white/70 overflow-hidden">
                                         <img src={BLUE_ICON} alt="Blue mode" className="h-full w-full object-cover" draggable="false" />
                                     </span>
-                                    Chill
+                                    Chill Mode  
                                 </span>
                             </button>
                         </div>
