@@ -234,7 +234,7 @@ export default function Navigation() {
     const LOGO_IMG = "/logo.gif";
 
     const CAN_I_DEFAULT = "/jexhappy.png";
-    const CAN_I_YES = "/jex2.png";
+    const CAN_I_YES = "/jexflower.png";
     const CAN_I_NO = "/jexsad.png";
 
     const YES_ICON = "/yes.png";
