@@ -808,8 +808,8 @@ export default function Hero() {
                                                       lang talaga na mapasaya ang isang Aila Medel kahit na sa simpleng bagay lang kaya ginagawa ko parin tong
                                                       mga to, and I hope nagugustuhan mo po, kaya sana hayaan mo lang ako ha, na i pa feel sayo yung deserved
                                                       mo, kahit walang kapalit gagawin ko parin naman to ng paulit-ulit hehe. Pero I just wanna say na super
-                                                      thankful ako na nakilala kita, alam ko na ang weird kasi hindi naman kita nakikita tsaka nakakasama diba?
-                                                      Pero hindi ko alam yun nararamdaman ko. Alam mo ba isa ka sa naging inspirasyon ko habang nasa thesis arc
+                                                      thankful ako na nakilala kita, alam ko na ang weird kasi hindi naman kita nakikita tsaka nakakasama diba pero ang gaan ng loob ko sayo.
+                                                      Tsaka alam mo ba isa ka sa naging inspirasyon ko habang nasa thesis arc
                                                       ako, kaya gusto ko rin talaga mag thankyou sayo adoyyy! Palagi kang kasama sa prayers ko at wish ko always
                                                       na maging masaya ka lang palagi, kayo ni baby Aqui. Hoping din ako na someday magkita ulet tayo and syempre
                                                       makita din si baby aqui hehe. So ayun lang, Sana nagustuhan mo to and sana napangiti kita kahit papano hehehe. Mahalaga ka, mahalaga ka palagi.
