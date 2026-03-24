@@ -1,4 +1,3 @@
-// pages/api/messages.jsx (or wherever your API route file is)
 import crypto from "node:crypto";
 import { Redis } from "@upstash/redis";
 
@@ -13,7 +12,6 @@ const isAdmin = (req) => {
 };
 
 const ownerHashFromToken = (token) => {
-    
   const t = String(token || "").trim();
   if (!t) return "";
   const pepper = process.env.WALL_OWNER_PEPPER || process.env.WALL_ADMIN_KEY || "";
@@ -24,10 +22,21 @@ export default async function handler(req, res) {
   try {
     if (req.method === "GET") {
       const items = await redis.lrange(KEY, 0, LIMIT - 1);
+      const requesterOwner = ownerHashFromToken(req.headers["x-owner-token"]);
+      const admin = isAdmin(req);
+
       const messages = (items || [])
         .map((x) => {
           try {
-            return typeof x === "string" ? JSON.parse(x) : x;
+            const m = typeof x === "string" ? JSON.parse(x) : x;
+            if (!m) return null;
+            return {
+              id: m.id,
+              name: m.name || "",
+              text: m.text || "",
+              ts: m.ts || 0,
+              canDeleteOwn: admin || (!!requesterOwner && !!m.owner && m.owner === requesterOwner),
+            };
           } catch {
             return null;
           }
@@ -57,7 +66,16 @@ export default async function handler(req, res) {
       await redis.lpush(KEY, JSON.stringify(msg));
       await redis.ltrim(KEY, 0, LIMIT - 1);
 
-      res.status(200).json({ ok: true, message: msg });
+      res.status(200).json({
+        ok: true,
+        message: {
+          id: msg.id,
+          name: msg.name,
+          text: msg.text,
+          ts: msg.ts,
+          canDeleteOwn: true,
+        },
+      });
       return;
     }
 

@@ -23,7 +23,6 @@ export default function Navigation() {
     const [wallDeletingId, setWallDeletingId] = useState(null);
 
     const [ownerToken, setOwnerToken] = useState(() => localStorage.getItem("jex_wall_owner_token") || "");
-    const [ownerHash, setOwnerHash] = useState("");
 
     const pollRef = useRef(null);
 
@@ -144,35 +143,6 @@ export default function Navigation() {
                 : `${Date.now()}-${Math.random().toString(16).slice(2)}`) + "-jex";
         localStorage.setItem("jex_wall_owner_token", t);
         setOwnerToken(t);
-    }, [ownerToken]);
-
-    useEffect(() => {
-        let cancelled = false;
-
-        const toHex = (buf) =>
-            Array.from(new Uint8Array(buf))
-                .map((b) => b.toString(16).padStart(2, "0"))
-                .join("");
-
-        const compute = async () => {
-            if (!ownerToken) {
-                if (!cancelled) setOwnerHash("");
-                return;
-            }
-            try {
-                const pepper = "";
-                const data = new TextEncoder().encode(`${pepper}:${ownerToken}`);
-                const digest = await crypto.subtle.digest("SHA-256", data);
-                if (!cancelled) setOwnerHash(toHex(digest));
-            } catch {
-                if (!cancelled) setOwnerHash("");
-            }
-        };
-
-        compute();
-        return () => {
-            cancelled = true;
-        };
     }, [ownerToken]);
 
     const resetCanI = () => {
@@ -352,7 +322,10 @@ export default function Navigation() {
         if (!silent) setWallLoading(true);
         setWallError("");
         try {
-            const res = await fetch("/api/messages", { method: "GET" });
+            const headers = {};
+            if (ownerToken) headers["x-owner-token"] = ownerToken;
+
+            const res = await fetch("/api/messages", { method: "GET", headers });
             if (!res.ok) throw new Error("Failed to load messages.");
             const data = await res.json();
             setWallMessages(Array.isArray(data?.messages) ? data.messages : []);
@@ -381,7 +354,7 @@ export default function Navigation() {
                 pollRef.current = null;
             }
         };
-    }, [messageOpen]);
+    }, [messageOpen, ownerToken]);
 
     const postWall = async () => {
         const name = (wallName || "").trim();
@@ -448,13 +421,11 @@ export default function Navigation() {
     const wallStats = useMemo(() => {
         const total = wallMessages.length;
         let mine = 0;
-        if (ownerHash) {
-            for (const m of wallMessages) {
-                if (m?.owner && m.owner === ownerHash) mine += 1;
-            }
+        for (const m of wallMessages) {
+            if (m?.canDeleteOwn) mine += 1;
         }
         return { total, mine };
-    }, [wallMessages, ownerHash]);
+    }, [wallMessages]);
 
     useEffect(() => {
         if (!galleryOpen) {
@@ -856,7 +827,7 @@ export default function Navigation() {
                                                     <div className="max-h-[60svh] overflow-auto pr-1">
                                                         <div className="grid gap-2.5">
                                                             {wallMessages.map((m) => {
-                                                                const canDeleteOwn = !!ownerHash && !!m?.owner && m.owner === ownerHash;
+                                                                const canDeleteOwn = !!m?.canDeleteOwn;
 
                                                                 return (
                                                                     <div
