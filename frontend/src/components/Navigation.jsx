@@ -15,6 +15,9 @@ export default function Navigation() {
 
     const [wallName, setWallName] = useState(() => localStorage.getItem("jex_wall_name") || "");
     const [wallText, setWallText] = useState("");
+    const [wallImage, setWallImage] = useState(null);
+    const [wallAudio, setWallAudio] = useState(null);
+    const [wallRecording, setWallRecording] = useState(false);
     const [wallMessages, setWallMessages] = useState([]);
     const [wallLoading, setWallLoading] = useState(false);
     const [wallPosting, setWallPosting] = useState(false);
@@ -25,6 +28,10 @@ export default function Navigation() {
     const [ownerToken, setOwnerToken] = useState(() => localStorage.getItem("jex_wall_owner_token") || "");
 
     const pollRef = useRef(null);
+    const mediaRecorderRef = useRef(null);
+    const audioChunksRef = useRef([]);
+    const audioStreamRef = useRef(null);
+    const imageInputRef = useRef(null);
 
     const [galleryActiveIndex, setGalleryActiveIndex] = useState(null);
 
@@ -144,6 +151,14 @@ export default function Navigation() {
         localStorage.setItem("jex_wall_owner_token", t);
         setOwnerToken(t);
     }, [ownerToken]);
+
+    useEffect(() => {
+        return () => {
+            if (audioStreamRef.current) {
+                audioStreamRef.current.getTracks().forEach((track) => track.stop());
+            }
+        };
+    }, []);
 
     const resetCanI = () => {
         setChoice("none");
@@ -318,6 +333,117 @@ export default function Navigation() {
         []
     );
 
+    const fileToDataUrl = (file) =>
+        new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+
+    const onWallImageChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setWallError("");
+
+        if (!file.type.startsWith("image/")) {
+            setWallError("Please choose an image file.");
+            return;
+        }
+
+        try {
+            const data = await fileToDataUrl(file);
+            setWallImage({
+                data,
+                name: file.name,
+                type: file.type,
+                size: file.size,
+            });
+        } catch {
+            setWallError("Could not load this image.");
+        } finally {
+            if (imageInputRef.current) imageInputRef.current.value = "";
+        }
+    };
+
+    const startWallRecording = async () => {
+        setWallError("");
+
+        try {
+            if (!navigator.mediaDevices?.getUserMedia) {
+                setWallError("Voice recording is not supported on this browser.");
+                return;
+            }
+
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            audioStreamRef.current = stream;
+            audioChunksRef.current = [];
+
+            const recorder = new MediaRecorder(stream);
+            mediaRecorderRef.current = recorder;
+
+            recorder.ondataavailable = (e) => {
+                if (e.data && e.data.size > 0) {
+                    audioChunksRef.current.push(e.data);
+                }
+            };
+
+            recorder.onstop = async () => {
+                const type = recorder.mimeType || "audio/webm";
+                const blob = new Blob(audioChunksRef.current, { type });
+
+                try {
+                    const data = await fileToDataUrl(blob);
+                    setWallAudio({
+                        data,
+                        name: `voice-message-${Date.now()}.webm`,
+                        type,
+                        size: blob.size,
+                    });
+                } catch {
+                    setWallError("Could not save the voice recording.");
+                }
+
+                if (audioStreamRef.current) {
+                    audioStreamRef.current.getTracks().forEach((track) => track.stop());
+                    audioStreamRef.current = null;
+                }
+
+                mediaRecorderRef.current = null;
+                audioChunksRef.current = [];
+            };
+
+            recorder.start();
+            setWallRecording(true);
+        } catch {
+            setWallError("Microphone permission is needed to record audio.");
+        }
+    };
+
+    const stopWallRecording = () => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+            mediaRecorderRef.current.stop();
+        }
+
+        setWallRecording(false);
+    };
+
+    const removeWallImage = () => {
+        setWallImage(null);
+        if (imageInputRef.current) imageInputRef.current.value = "";
+    };
+
+    const removeWallAudio = () => {
+        setWallAudio(null);
+    };
+
+    const getMediaData = (media) => {
+        if (!media) return "";
+        if (typeof media === "string") return media;
+        return media.data || media.url || "";
+    };
+
     const fetchWall = async ({ silent = false } = {}) => {
         if (!silent) setWallLoading(true);
         setWallError("");
@@ -359,7 +485,8 @@ export default function Navigation() {
     const postWall = async () => {
         const name = (wallName || "").trim();
         const text = (wallText || "").trim();
-        if (!text) return;
+
+        if (!text && !wallImage && !wallAudio) return;
 
         setWallPosting(true);
         setWallError("");
@@ -368,10 +495,13 @@ export default function Navigation() {
             const res = await fetch("/api/messages", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, text, ownerToken }),
+                body: JSON.stringify({ name, text, image: wallImage, audio: wallAudio, ownerToken }),
             });
             if (!res.ok) throw new Error("Failed to post.");
             setWallText("");
+            setWallImage(null);
+            setWallAudio(null);
+            if (imageInputRef.current) imageInputRef.current.value = "";
             await fetchWall({ silent: true });
         } catch (e) {
             setWallError("Could not post your message. Try again.");
@@ -768,7 +898,7 @@ export default function Navigation() {
                                     </span>
                                     <div className="min-w-0">
                                         <div className="text-sm font-extrabold text-slate-900 truncate">Random Thoughts & Messages</div>
-                                        <div className="text-[11px] font-semibold text-slate-500 truncate">Post something sweet, funny, or random. Everyone can see it.</div>
+                                        <div className="text-[11px] font-semibold text-slate-500 truncate">Post a message, picture, or voice recording. Everyone can see it.</div>
                                     </div>
                                 </div>
 
@@ -828,6 +958,8 @@ export default function Navigation() {
                                                         <div className="grid gap-2.5">
                                                             {wallMessages.map((m) => {
                                                                 const canDeleteOwn = !!m?.canDeleteOwn;
+                                                                const imageData = getMediaData(m.image || m.picture || m.photo);
+                                                                const audioData = getMediaData(m.audio || m.voice || m.recording);
 
                                                                 return (
                                                                     <div
@@ -839,7 +971,7 @@ export default function Navigation() {
                                                                         ].join(" ")}
                                                                     >
                                                                         <div className="flex items-start justify-between gap-3">
-                                                                            <div className="min-w-0">
+                                                                            <div className="min-w-0 flex-1">
                                                                                 <div className="flex flex-wrap items-center gap-2">
                                                                                     <p className="text-slate-900 font-extrabold text-sm tracking-tight truncate">
                                                                                         {m.name ? m.name : "Anonymous"}
@@ -852,7 +984,21 @@ export default function Navigation() {
                                                                                     ) : null}
                                                                                 </div>
 
-                                                                                <p className="mt-2 text-slate-700 text-sm leading-relaxed whitespace-pre-wrap break-words">{m.text}</p>
+                                                                                {m.text ? (
+                                                                                    <p className="mt-2 text-slate-700 text-sm leading-relaxed whitespace-pre-wrap break-words">{m.text}</p>
+                                                                                ) : null}
+
+                                                                                {imageData ? (
+                                                                                    <div className="mt-3 overflow-hidden rounded-3xl ring-1 ring-[var(--soft-border)] bg-white/70">
+                                                                                        <img src={imageData} alt="Posted attachment" className="w-full max-h-80 object-contain" draggable="false" />
+                                                                                    </div>
+                                                                                ) : null}
+
+                                                                                {audioData ? (
+                                                                                    <div className="mt-3 rounded-3xl ring-1 ring-[var(--soft-border)] bg-white/70 p-3">
+                                                                                        <audio controls src={audioData} className="w-full" />
+                                                                                    </div>
+                                                                                ) : null}
                                                                             </div>
 
                                                                             <div className="shrink-0 flex items-center gap-2">
@@ -892,7 +1038,7 @@ export default function Navigation() {
                                         <div className="rounded-3xl border border-[var(--soft-border)] bg-white/70 shadow-[0_18px_50px_-40px_rgba(0,0,0,0.25)] overflow-hidden">
                                             <div className="px-4 sm:px-5 py-3 border-b border-black/5 bg-white/60">
                                                 <p className="text-slate-900 font-extrabold tracking-tight">Write a post</p>
-                                                <p className="mt-0.5 text-slate-500 text-[11px] sm:text-xs font-semibold">write your message below.</p>
+                                                <p className="mt-0.5 text-slate-500 text-[11px] sm:text-xs font-semibold">Write your message, add a photo, or record your voice.</p>
                                             </div>
 
                                             <div className="p-4 sm:p-5">
@@ -933,10 +1079,78 @@ export default function Navigation() {
                                                 </label>
 
                                                 <div className="mt-4 grid gap-2">
+                                                    <input ref={imageInputRef} type="file" accept="image/*" onChange={onWallImageChange} className="hidden" />
+
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => imageInputRef.current?.click()}
+                                                            className={[
+                                                                "inline-flex items-center justify-center gap-2",
+                                                                "rounded-3xl px-4 py-2.5",
+                                                                "text-xs font-extrabold",
+                                                                "text-slate-700 bg-white/80",
+                                                                "ring-1 ring-[var(--soft-border)]",
+                                                                "transition-all duration-200 ease-out",
+                                                                "hover:-translate-y-0.5 hover:bg-white active:translate-y-0",
+                                                                "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-white/70",
+                                                            ].join(" ")}
+                                                        >
+                                                            <span>🖼️</span>
+                                                            Picture
+                                                        </button>
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={wallRecording ? stopWallRecording : startWallRecording}
+                                                            className={[
+                                                                "inline-flex items-center justify-center gap-2",
+                                                                "rounded-3xl px-4 py-2.5",
+                                                                "text-xs font-extrabold",
+                                                                wallRecording ? "text-white bg-red-500" : "text-slate-700 bg-white/80",
+                                                                !wallRecording ? "ring-1 ring-[var(--soft-border)]" : "",
+                                                                "transition-all duration-200 ease-out",
+                                                                "hover:-translate-y-0.5 active:translate-y-0",
+                                                                "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-white/70",
+                                                            ].join(" ")}
+                                                        >
+                                                            <span>{wallRecording ? "⏹️" : "🎙️"}</span>
+                                                            {wallRecording ? "Stop" : "Record"}
+                                                        </button>
+                                                    </div>
+
+                                                    {wallImage ? (
+                                                        <div className="rounded-3xl bg-white/80 ring-1 ring-[var(--soft-border)] p-3">
+                                                            <div className="overflow-hidden rounded-2xl bg-white/70">
+                                                                <img src={wallImage.data} alt="Selected upload" className="w-full max-h-44 object-contain" draggable="false" />
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={removeWallImage}
+                                                                className="mt-2 w-full rounded-2xl bg-white px-3 py-2 text-[11px] font-bold text-slate-700 ring-1 ring-[var(--soft-border)] transition hover:-translate-y-0.5 active:translate-y-0"
+                                                            >
+                                                                Remove Picture
+                                                            </button>
+                                                        </div>
+                                                    ) : null}
+
+                                                    {wallAudio ? (
+                                                        <div className="rounded-3xl bg-white/80 ring-1 ring-[var(--soft-border)] p-3">
+                                                            <audio controls src={wallAudio.data} className="w-full" />
+                                                            <button
+                                                                type="button"
+                                                                onClick={removeWallAudio}
+                                                                className="mt-2 w-full rounded-2xl bg-white px-3 py-2 text-[11px] font-bold text-slate-700 ring-1 ring-[var(--soft-border)] transition hover:-translate-y-0.5 active:translate-y-0"
+                                                            >
+                                                                Remove Audio
+                                                            </button>
+                                                        </div>
+                                                    ) : null}
+
                                                     <button
                                                         type="button"
                                                         onClick={postWall}
-                                                        disabled={wallPosting || !(wallText || "").trim()}
+                                                        disabled={wallPosting || wallRecording || (!wallText.trim() && !wallImage && !wallAudio)}
                                                         className={[
                                                             "w-full inline-flex items-center justify-center gap-2",
                                                             "rounded-3xl px-5 py-3",
