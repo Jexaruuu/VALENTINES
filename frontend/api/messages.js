@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { Redis } from "@upstash/redis";
+import Busboy from "busboy";
 
 const redis = Redis.fromEnv();
 
@@ -22,6 +23,46 @@ export const config = {
   api: {
     bodyParser: false,
   },
+};
+
+const parseMultipart = (req) => {
+  return new Promise((resolve, reject) => {
+    const busboy = Busboy({ headers: req.headers });
+    const fields = {};
+    const files = {};
+
+    busboy.on("field", (fieldname, val) => {
+      fields[fieldname] = val;
+    });
+
+    busboy.on("file", (fieldname, file, info) => {
+      const chunks = [];
+      file.on("data", (chunk) => {
+        chunks.push(chunk);
+      });
+      file.on("end", () => {
+        const buffer = Buffer.concat(chunks);
+        const base64 = buffer.toString("base64");
+        const mimeType = info.mimeType || "application/octet-stream";
+        files[fieldname] = {
+          data: `data:${mimeType};base64,${base64}`,
+          filename: info.filename,
+          mimeType: info.mimeType,
+          size: buffer.length,
+        };
+      });
+    });
+
+    busboy.on("error", (err) => {
+      reject(err);
+    });
+
+    busboy.on("finish", () => {
+      resolve({ fields, files });
+    });
+
+    req.pipe(busboy);
+  });
 };
 
 export default async function handler(req, res) {
@@ -57,72 +98,39 @@ export default async function handler(req, res) {
 
     if (req.method === "POST") {
       const contentType = req.headers["content-type"] || "";
-      let name = "";
-      let text = "";
-      let ownerToken = "";
-      let imageData = "";
-      let audioData = "";
-
-      if (contentType.includes("multipart/form-data")) {
-        const { Readable } = await import("stream");
-        const chunks = [];
-        for await (const chunk of req) {
-          chunks.push(chunk);
-        }
-        const buffer = Buffer.concat(chunks);
-        
-        const boundary = contentType.split("boundary=")[1];
-        if (!boundary) {
-          return res.status(400).json({ error: "Invalid form data" });
-        }
-
-        const parts = buffer.toString("binary").split(`--${boundary}`);
-        for (const part of parts) {
-          if (part.includes("Content-Disposition: form-data; name=\"name\"")) {
-            const match = part.match(/\r\n\r\n([\s\S]*?)\r\n--/);
-            if (match) name = match[1].trim();
-          } else if (part.includes("Content-Disposition: form-data; name=\"text\"")) {
-            const match = part.match(/\r\n\r\n([\s\S]*?)\r\n--/);
-            if (match) text = match[1].trim();
-          } else if (part.includes("Content-Disposition: form-data; name=\"ownerToken\"")) {
-            const match = part.match(/\r\n\r\n([\s\S]*?)\r\n--/);
-            if (match) ownerToken = match[1].trim();
-          } else if (part.includes("Content-Disposition: form-data; name=\"image\"")) {
-            const match = part.match(/\r\n\r\n([\s\S]*?)\r\n--/);
-            if (match) {
-              const base64 = Buffer.from(match[1], "binary").toString("base64");
-              const contentTypeMatch = part.match(/Content-Type: (.*?)\r\n/);
-              const mimeType = contentTypeMatch ? contentTypeMatch[1] : "image/png";
-              imageData = `data:${mimeType};base64,${base64}`;
-            }
-          } else if (part.includes("Content-Disposition: form-data; name=\"audio\"")) {
-            const match = part.match(/\r\n\r\n([\s\S]*?)\r\n--/);
-            if (match) {
-              const base64 = Buffer.from(match[1], "binary").toString("base64");
-              const contentTypeMatch = part.match(/Content-Type: (.*?)\r\n/);
-              const mimeType = contentTypeMatch ? contentTypeMatch[1] : "audio/webm";
-              audioData = `data:${mimeType};base64,${base64}`;
-            }
-          }
-        }
-      } else {
+      
+      if (!contentType.includes("multipart/form-data")) {
         return res.status(400).json({ error: "Expected multipart/form-data" });
       }
 
+      let parsed;
+      try {
+        parsed = await parseMultipart(req);
+      } catch (err) {
+        console.error("Parse error:", err);
+        return res.status(400).json({ error: "Failed to parse form data" });
+      }
+
+      const { fields, files } = parsed;
+      const name = fields.name || "";
+      const text = fields.text || "";
+      const ownerToken = fields.ownerToken || "";
+      
       const cleanText = String(text || "").trim();
-      if (!cleanText && !imageData && !audioData) {
+      const cleanName = String(name || "").trim().slice(0, 40);
+      
+      if (!cleanText && !files.image && !files.audio) {
         return res.status(400).json({ error: "Message, image, or audio required" });
       }
 
-      const cleanName = String(name || "").trim().slice(0, 40);
       const owner = ownerHashFromToken(ownerToken);
 
       const msg = {
         id: crypto.randomUUID(),
         name: cleanName,
         text: cleanText.slice(0, 600),
-        image: imageData.slice(0, 500000),
-        audio: audioData.slice(0, 500000),
+        image: files.image ? files.image.data.slice(0, 500000) : "",
+        audio: files.audio ? files.audio.data.slice(0, 500000) : "",
         ts: Date.now(),
         owner: owner || "",
       };
