@@ -491,11 +491,25 @@ export default function Navigation() {
         setWallPosting(true);
         setWallError("");
 
+        const formData = new FormData();
+        formData.append("name", name);
+        formData.append("text", text);
+        formData.append("ownerToken", ownerToken);
+
+        if (wallImage) {
+            const blob = await fetch(wallImage.data).then(r => r.blob());
+            formData.append("image", blob, wallImage.name);
+        }
+
+        if (wallAudio) {
+            const blob = await fetch(wallAudio.data).then(r => r.blob());
+            formData.append("audio", blob, wallAudio.name);
+        }
+
         try {
             const res = await fetch("/api/messages", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, text, image: wallImage, audio: wallAudio, ownerToken }),
+                body: formData,
             });
             if (!res.ok) throw new Error("Failed to post.");
             setWallText("");
