@@ -899,8 +899,8 @@ export default function Navigation() {
 
     if (messageOpen) {
         return (
-            <div className="fixed inset-0 z-[999] font-['Poppins']" role="dialog" aria-modal="true" aria-label="Message overlay" onClick={closeMessageOverlay}>
-                <div className="absolute inset-0 bg-black/30 backdrop-blur-md" aria-hidden="true" />
+            <div className="fixed inset-0 z-[999] overflow-x-hidden overflow-y-auto overscroll-contain font-['Poppins']" role="dialog" aria-modal="true" aria-label="Message overlay" onClick={closeMessageOverlay}>
+                <div className="fixed inset-0 bg-black/30 backdrop-blur-md" aria-hidden="true" />
 
                 <div className="relative z-10 min-h-[100svh] w-full px-3 sm:px-4 py-6 sm:py-10 flex items-center justify-center">
                     <div className="w-full max-w-6xl" onClick={(e) => e.stopPropagation()}>
@@ -948,7 +948,7 @@ export default function Navigation() {
                                     </div>
 
                                     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)] items-start">
-                                        <div className="rounded-3xl border border-[var(--soft-border)] bg-white/70 shadow-[0_18px_50px_-40px_rgba(0,0,0,0.25)] overflow-hidden">
+                                        <div className="min-w-0 rounded-3xl border border-[var(--soft-border)] bg-white/70 shadow-[0_18px_50px_-40px_rgba(0,0,0,0.25)] overflow-hidden">
                                             <div className="px-4 sm:px-5 py-3 border-b border-black/5 bg-white/60">
                                                 <p className="text-slate-900 font-extrabold tracking-tight">Wall Posts</p>
                                                 <p className="mt-0.5 text-slate-500 text-[11px] sm:text-xs font-semibold">See what everyone posted 🫶</p>
@@ -968,8 +968,8 @@ export default function Navigation() {
                                                         No messages yet. Be the first 🫶
                                                     </div>
                                                 ) : (
-                                                    <div className="max-h-[60svh] overflow-auto pr-1">
-                                                        <div className="grid gap-2.5">
+                                                    <div className="min-w-0">
+                                                        <div className="flex min-w-0 flex-col gap-2.5">
                                                             {wallMessages.map((m) => {
                                                                 const canDeleteOwn = !!m?.canDeleteOwn;
                                                                 const imageData = getMediaData(m.image || m.picture || m.photo);
@@ -979,7 +979,7 @@ export default function Navigation() {
                                                                     <div
                                                                         key={m.id}
                                                                         className={[
-                                                                            "rounded-3xl bg-white/80 ring-1 ring-[var(--soft-border)]",
+                                                                            "min-w-0 rounded-3xl bg-white/80 ring-1 ring-[var(--soft-border)]",
                                                                             "p-4",
                                                                             "shadow-[0_18px_50px_-40px_rgba(0,0,0,0.25)]",
                                                                         ].join(" ")}
@@ -999,7 +999,7 @@ export default function Navigation() {
                                                                                 </div>
 
                                                                                 {m.text ? (
-                                                                                    <p className="mt-2 text-slate-700 text-sm leading-relaxed whitespace-pre-wrap break-words">{m.text}</p>
+                                                                                    <p className="mt-2 whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-sm leading-relaxed text-slate-700">{m.text}</p>
                                                                                 ) : null}
 
                                                                                 {imageData ? (
@@ -1049,7 +1049,7 @@ export default function Navigation() {
                                             </div>
                                         </div>
 
-                                        <div className="rounded-3xl border border-[var(--soft-border)] bg-white/70 shadow-[0_18px_50px_-40px_rgba(0,0,0,0.25)] overflow-hidden">
+                                        <div className="min-w-0 rounded-3xl border border-[var(--soft-border)] bg-white/70 shadow-[0_18px_50px_-40px_rgba(0,0,0,0.25)] overflow-hidden">
                                             <div className="px-4 sm:px-5 py-3 border-b border-black/5 bg-white/60">
                                                 <p className="text-slate-900 font-extrabold tracking-tight">Write a post</p>
                                                 <p className="mt-0.5 text-slate-500 text-[11px] sm:text-xs font-semibold">Write your message, add a photo, or record your voice.</p>
