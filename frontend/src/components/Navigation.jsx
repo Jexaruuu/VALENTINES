@@ -31,6 +31,7 @@ export default function Navigation() {
     const audioInputRef = useRef(null);
 
     const [galleryActiveIndex, setGalleryActiveIndex] = useState(null);
+    const [expandedConversation, setExpandedConversation] = useState(null);
 
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 10);
@@ -527,6 +528,40 @@ export default function Navigation() {
         return { total, mine };
     }, [wallMessages]);
 
+    const wallConversations = useMemo(() => {
+        const conversations = new Map();
+
+        wallMessages.forEach((message, index) => {
+            const name = String(message?.name || "").trim() || "Anonymous";
+            const senderId = message?.senderId ?? message?.userId ?? message?.authorId ?? message?.ownerId;
+            const key = senderId != null && String(senderId).trim()
+                ? `sender:${senderId}`
+                : `name:${name.toLocaleLowerCase()}`;
+            const timestamp = new Date(message?.ts || 0).getTime();
+            const item = { ...message, order: index, timestamp: Number.isFinite(timestamp) ? timestamp : 0 };
+
+            if (!conversations.has(key)) conversations.set(key, { key, name, messages: [] });
+            conversations.get(key).messages.push(item);
+        });
+
+        return Array.from(conversations.values())
+            .map((conversation) => {
+                conversation.messages.sort((a, b) => b.timestamp - a.timestamp || a.order - b.order);
+                conversation.name = String(conversation.messages[0]?.name || "").trim() || "Anonymous";
+                conversation.latest = conversation.messages[0];
+                return conversation;
+            })
+            .sort((a, b) => b.latest.timestamp - a.latest.timestamp || a.latest.order - b.latest.order);
+    }, [wallMessages]);
+
+    const getWallPreview = (message) => {
+        const text = String(message?.text || "").trim();
+        if (text) return text;
+        if (getMediaData(message?.image || message?.picture || message?.photo)) return "📷 Photo";
+        if (getMediaData(message?.audio || message?.voice || message?.recording)) return "🎵 Audio message";
+        return "Message";
+    };
+
     useEffect(() => {
         if (!galleryOpen) {
             setGalleryActiveIndex(null);
@@ -897,7 +932,7 @@ export default function Navigation() {
                                         <div className="text-[11px] sm:text-xs font-extrabold text-slate-700">
                                             Freedom Wall{" "}
                                             <span className="font-semibold text-slate-500">
-                                                · {wallStats.total} posts{wallStats.mine ? ` · ${wallStats.mine} yours` : ""}
+                                                · {wallConversations.length} conversations · {wallStats.total} posts{wallStats.mine ? ` · ${wallStats.mine} yours` : ""}
                                             </span>
                                         </div>
                                         <div className="text-[11px] sm:text-xs font-semibold text-slate-500">Auto-refresh every 5 seconds</div>
@@ -906,8 +941,8 @@ export default function Navigation() {
                                     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)] items-start">
                                         <div className="min-w-0 rounded-3xl border border-[var(--soft-border)] bg-white/70 shadow-[0_18px_50px_-40px_rgba(0,0,0,0.25)] overflow-hidden">
                                             <div className="px-4 sm:px-5 py-3 border-b border-black/5 bg-white/60">
-                                                <p className="text-slate-900 font-extrabold tracking-tight">Wall Posts</p>
-                                                <p className="mt-0.5 text-slate-500 text-[11px] sm:text-xs font-semibold">See what everyone posted 🫶</p>
+                                                <p className="text-slate-900 font-extrabold tracking-tight">Conversations</p>
+                                                <p className="mt-0.5 text-slate-500 text-[11px] sm:text-xs font-semibold">Tap a conversation to see all messages 🫶</p>
                                             </div>
 
                                             <div className="p-3 sm:p-4">
@@ -919,87 +954,121 @@ export default function Navigation() {
                                                     <div className="rounded-3xl bg-white/80 ring-1 ring-[var(--soft-border)] p-5 text-center text-slate-600 text-sm font-semibold">
                                                         Loading messages…
                                                     </div>
-                                                ) : wallMessages.length === 0 ? (
+                                                ) : wallConversations.length === 0 ? (
                                                     <div className="rounded-3xl bg-white/80 ring-1 ring-[var(--soft-border)] p-5 text-center text-slate-600 text-sm font-semibold">
                                                         No messages yet. Be the first 🫶
                                                     </div>
                                                 ) : (
-                                                    <div className="min-w-0">
-                                                        <div className="flex min-w-0 flex-col gap-2.5">
-                                                            {wallMessages.map((m) => {
-                                                                const canDeleteOwn = !!m?.canDeleteOwn;
-                                                                const imageData = getMediaData(m.image || m.picture || m.photo);
-                                                                const audioData = getMediaData(m.audio || m.voice || m.recording);
+                                                    <div className="flex min-w-0 flex-col gap-2.5">
+                                                        {wallConversations.map((conversation) => {
+                                                            const isExpanded = expandedConversation === conversation.key;
+                                                            const latest = conversation.latest;
+                                                            const initials = conversation.name
+                                                                .split(/\s+/)
+                                                                .slice(0, 2)
+                                                                .map((part) => part[0]?.toUpperCase() || "")
+                                                                .join("");
 
-                                                                return (
-                                                                    <div
-                                                                        key={m.id}
-                                                                        className={[
-                                                                            "min-w-0 rounded-3xl bg-white/80 ring-1 ring-[var(--soft-border)]",
-                                                                            "p-4",
-                                                                            "shadow-[0_18px_50px_-40px_rgba(0,0,0,0.25)]",
-                                                                        ].join(" ")}
+                                                            return (
+                                                                <div
+                                                                    key={conversation.key}
+                                                                    className="min-w-0 overflow-hidden rounded-[22px] border border-[var(--soft-border)] bg-white shadow-[0_15px_35px_-30px_rgba(0,0,0,0.4)] transition-colors duration-300"
+                                                                >
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setExpandedConversation(isExpanded ? null : conversation.key)}
+                                                                        aria-expanded={isExpanded}
+                                                                        className="flex w-full min-w-0 items-center gap-3 px-3 py-3 text-left transition-colors duration-200 hover:bg-slate-50/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--ring)] sm:px-4"
                                                                     >
-                                                                        <div className="flex items-start justify-between gap-3">
-                                                                            <div className="min-w-0 flex-1">
-                                                                                <div className="flex flex-wrap items-center gap-2">
-                                                                                    <p className="text-slate-900 font-extrabold text-sm tracking-tight truncate">
-                                                                                        {m.name ? m.name : "Anonymous"}
-                                                                                    </p>
-                                                                                    {canDeleteOwn ? (
-                                                                                        <span className="inline-flex items-center gap-1 rounded-full bg-white/70 ring-1 ring-[var(--soft-border)] px-2 py-0.5 text-[10px] font-extrabold text-slate-700">
-                                                                                            <span className="grid h-4 w-4 place-items-center rounded-full bg-white">👤</span>
-                                                                                            Yours
-                                                                                        </span>
-                                                                                    ) : null}
+                                                                        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--accent-solid)] text-sm font-black text-white shadow-sm">
+                                                                            {initials || "?"}
+                                                                        </span>
+                                                                        <span className="min-w-0 flex-1">
+                                                                            <span className="flex min-w-0 items-center justify-between gap-2">
+                                                                                <span className="truncate text-sm font-extrabold text-slate-900">{conversation.name}</span>
+                                                                                <span className="shrink-0 text-[10px] font-medium text-slate-400">{formatTime(latest.ts)}</span>
+                                                                            </span>
+                                                                            <span className="mt-1 flex min-w-0 items-center gap-2">
+                                                                                <span className="min-w-0 flex-1 truncate text-xs font-medium text-slate-500">{getWallPreview(latest)}</span>
+                                                                                <span className="shrink-0 rounded-full bg-[var(--pill)] px-2 py-0.5 text-[10px] font-extrabold text-[var(--accent-text)]">
+                                                                                    {conversation.messages.length}
+                                                                                </span>
+                                                                            </span>
+                                                                        </span>
+                                                                        <svg
+                                                                            viewBox="0 0 24 24"
+                                                                            fill="none"
+                                                                            stroke="currentColor"
+                                                                            strokeWidth="2"
+                                                                            strokeLinecap="round"
+                                                                            strokeLinejoin="round"
+                                                                            aria-hidden="true"
+                                                                            className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-500 ${isExpanded ? "rotate-180" : ""}`}
+                                                                        >
+                                                                            <path d="m6 9 6 6 6-6" />
+                                                                        </svg>
+                                                                    </button>
+
+                                                                    <div
+                                                                        className={`grid min-w-0 transition-[grid-template-rows,opacity] duration-500 ease-in-out ${isExpanded ? "grid-rows-[1fr] opacity-100" : "pointer-events-none grid-rows-[0fr] opacity-0"}`}
+                                                                        aria-hidden={!isExpanded}
+                                                                        inert={isExpanded ? undefined : "inert"}
+                                                                    >
+                                                                        <div className="min-h-0 min-w-0 overflow-hidden">
+                                                                            <div className="border-t border-[var(--soft-border)] bg-slate-50/70 px-3 pb-4 pt-3 sm:px-4">
+                                                                                <div className="mb-3 flex items-center justify-between gap-2">
+                                                                                    <span className="text-[11px] font-bold text-slate-500">{conversation.messages.length} {conversation.messages.length === 1 ? "message" : "messages"}</span>
+                                                                                    <span className="text-[11px] font-semibold text-slate-400">Latest first</span>
                                                                                 </div>
+                                                                                <div className="flex max-h-[55svh] min-w-0 flex-col gap-3 overflow-y-auto overscroll-contain pr-1">
+                                                                                    {conversation.messages.map((m) => {
+                                                                                        const canDeleteOwn = !!m?.canDeleteOwn;
+                                                                                        const imageData = getMediaData(m.image || m.picture || m.photo);
+                                                                                        const audioData = getMediaData(m.audio || m.voice || m.recording);
 
-                                                                                {m.text ? (
-                                                                                    <p className="mt-2 whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-sm leading-relaxed text-slate-700">{m.text}</p>
-                                                                                ) : null}
+                                                                                        return (
+                                                                                            <div key={m.id} className={`flex min-w-0 ${canDeleteOwn ? "justify-end" : "justify-start"}`}>
+                                                                                                <div className={`min-w-0 max-w-[92%] rounded-[20px] px-3.5 py-3 shadow-sm sm:max-w-[85%] ${canDeleteOwn ? "rounded-tr-md bg-[var(--accent-solid)] text-white" : "rounded-tl-md border border-[var(--soft-border)] bg-white text-slate-800"}`}>
+                                                                                                    {m.text ? (
+                                                                                                        <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-[13px] font-medium leading-relaxed">{m.text}</p>
+                                                                                                    ) : null}
 
-                                                                                {imageData ? (
-                                                                                    <div className="mt-3 overflow-hidden rounded-3xl ring-1 ring-[var(--soft-border)] bg-white/70">
-                                                                                        <img src={imageData} alt="Posted attachment" className="w-full max-h-80 object-contain" draggable="false" />
-                                                                                    </div>
-                                                                                ) : null}
+                                                                                                    {imageData ? (
+                                                                                                        <div className="mt-2 overflow-hidden rounded-xl bg-white/90">
+                                                                                                            <img src={imageData} alt="Posted attachment" className="max-h-72 w-full object-contain" draggable="false" />
+                                                                                                        </div>
+                                                                                                    ) : null}
 
-                                                                                {audioData ? (
-                                                                                    <div className="mt-3 rounded-3xl ring-1 ring-[var(--soft-border)] bg-white/70 p-3">
-                                                                                        <audio controls src={audioData} className="w-full" />
-                                                                                    </div>
-                                                                                ) : null}
-                                                                            </div>
+                                                                                                    {audioData ? (
+                                                                                                        <div className="mt-2 rounded-xl bg-white/90 p-2">
+                                                                                                            <audio controls src={audioData} className="w-full min-w-0" />
+                                                                                                        </div>
+                                                                                                    ) : null}
 
-                                                                            <div className="shrink-0 flex items-center gap-2">
-                                                                                {canDeleteOwn ? (
-                                                                                    <button
-                                                                                        type="button"
-                                                                                        onClick={() => deleteWall(m.id)}
-                                                                                        disabled={wallDeletingId === m.id}
-                                                                                        className={[
-                                                                                            "rounded-2xl px-3 py-2",
-                                                                                            "text-[11px] font-semibold text-slate-700",
-                                                                                            "bg-white/70 ring-1 ring-[var(--soft-border)]",
-                                                                                            "hover:bg-white",
-                                                                                            "transition-all duration-200 ease-out",
-                                                                                            "disabled:opacity-60 disabled:cursor-not-allowed",
-                                                                                            "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-white/70",
-                                                                                        ].join(" ")}
-                                                                                    >
-                                                                                        {wallDeletingId === m.id ? "Deleting…" : "Delete"}
-                                                                                    </button>
-                                                                                ) : null}
-
-                                                                                <span className="grid h-8 w-8 place-items-center rounded-2xl bg-white/70 ring-1 ring-[var(--soft-border)] text-[13px]">💌</span>
+                                                                                                    <div className={`mt-2 flex flex-wrap items-center justify-between gap-2 text-[10px] ${canDeleteOwn ? "text-white/80" : "text-slate-400"}`}>
+                                                                                                        <span>{formatTime(m.ts)}</span>
+                                                                                                        {canDeleteOwn ? (
+                                                                                                            <button
+                                                                                                                type="button"
+                                                                                                                onClick={() => deleteWall(m.id)}
+                                                                                                                disabled={wallDeletingId === m.id}
+                                                                                                                className="rounded-full bg-white/15 px-2 py-1 font-bold text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                                                                                                            >
+                                                                                                                {wallDeletingId === m.id ? "Deleting…" : "Delete"}
+                                                                                                            </button>
+                                                                                                        ) : null}
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        );
+                                                                                    })}
+                                                                                </div>
                                                                             </div>
                                                                         </div>
-
-                                                                        <p className="mt-3 text-slate-500 text-[10px] sm:text-[11px] font-semibold">{formatTime(m.ts)}</p>
                                                                     </div>
-                                                                );
-                                                            })}
-                                                        </div>
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
                                                 )}
                                             </div>
